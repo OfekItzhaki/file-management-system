@@ -88,16 +88,30 @@ public class WindsorInstaller : IWindsorInstaller
                 .LifestyleScoped()
         );
 
+        // Register ILoggerFactory (needed to create loggers)
+        container.Register(
+            Component.For<ILoggerFactory>()
+                .UsingFactoryMethod(() =>
+                {
+                    return Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+                        builder.AddSerilog(Log.Logger));
+                })
+                .LifestyleSingleton()
+        );
+
         // Register ILogger<T> factory
         container.Register(
             Component.For(typeof(ILogger<>))
-                .ImplementedBy(typeof(Logger<>))
                 .UsingFactoryMethod((kernel, model, context) =>
                 {
-                    var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
-                        builder.AddSerilog(Log.Logger));
-                    var loggerType = typeof(ILogger<>).MakeGenericType(context.RequestedType.GetGenericArguments()[0]);
-                    return loggerFactory.CreateLogger(context.RequestedType.GetGenericArguments()[0]);
+                    // Get the generic type argument (T) from ILogger<T>
+                    var loggerType = context.RequestedType.GetGenericArguments()[0];
+                    
+                    // Resolve ILoggerFactory from container
+                    var loggerFactory = kernel.Resolve<ILoggerFactory>();
+                    
+                    // Create logger for the requested type
+                    return loggerFactory.CreateLogger(loggerType);
                 })
                 .LifestyleTransient()
         );
