@@ -79,7 +79,7 @@ public class FilesController : ControllerBase
     [HttpPost("upload")]
     public async Task<ActionResult<UploadFileResult>> UploadFile(
         IFormFile file,
-        [FromQuery] string? destinationFolder = null,
+        [FromForm] string? destinationFolder = null,
         CancellationToken cancellationToken = default)
     {
         if (file == null || file.Length == 0)
@@ -88,11 +88,11 @@ public class FilesController : ControllerBase
             return BadRequest("No file provided or file is empty");
         }
 
-        _logger.LogInformation("File upload started: {FileName}, Size={Size}, Destination={Destination}",
-            file.FileName, file.Length, destinationFolder ?? "default");
-
         // Save uploaded file to temp location
         var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
+        
+        _logger.LogInformation("File upload started: {FileName}, Size={Size}, Destination={Destination}, TempPath={TempPath}",
+            file.FileName, file.Length, destinationFolder ?? "default", tempPath);
         
         try
         {
@@ -100,6 +100,16 @@ public class FilesController : ControllerBase
             {
                 await file.CopyToAsync(stream, cancellationToken);
             }
+
+            // Verify temp file was created successfully
+            if (!System.IO.File.Exists(tempPath))
+            {
+                _logger.LogError("Temp file was not created: {TempPath}", tempPath);
+                return BadRequest("Failed to save uploaded file");
+            }
+
+            _logger.LogDebug("Temp file created successfully: {TempPath}, Size={Size}", 
+                tempPath, new FileInfo(tempPath).Length);
 
             var command = new UploadFileCommand(tempPath, destinationFolder);
             var result = await _mediator.Send(command, cancellationToken);
