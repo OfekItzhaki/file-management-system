@@ -30,6 +30,15 @@ public class WindsorInstaller : IWindsorInstaller
 
     public void Install(IWindsorContainer container, IConfigurationStore store)
     {
+        // CRITICAL: Add CollectionResolver BEFORE any component registrations
+        // This enables IEnumerable<T> injection support (needed for MediatR pipeline behaviors and ValidationBehavior)
+        container.Kernel.Resolver.AddSubResolver(
+            new Castle.MicroKernel.Resolvers.SpecializedResolvers.CollectionResolver(
+                container.Kernel, 
+                allowEmptyCollections: true
+            )
+        );
+        
         // Register the container itself first so it can be resolved
         container.Register(
             Component.For<Castle.Windsor.IWindsorContainer>()
@@ -245,24 +254,41 @@ internal class WindsorServiceProvider : IServiceProvider
         {
             var elementType = serviceType.GetGenericArguments()[0];
             
-            if (_container.Kernel.HasComponent(elementType))
+            try
             {
-                // Resolve all instances of the element type
-                var allInstances = _container.ResolveAll(elementType);
-                // Convert to array (arrays implement IEnumerable<T>)
-                var array = Array.CreateInstance(elementType, allInstances.Length);
-                Array.Copy(allInstances, array, allInstances.Length);
-                return array;
+                if (_container.Kernel.HasComponent(elementType))
+                {
+                    // Resolve all instances of the element type
+                    var allInstances = _container.ResolveAll(elementType);
+                    // Convert to array (arrays implement IEnumerable<T>)
+                    var array = Array.CreateInstance(elementType, allInstances.Length);
+                    Array.Copy(allInstances, array, allInstances.Length);
+                    return array;
+                }
+                
+                // Return empty array if no components found
+                return Array.CreateInstance(elementType, 0);
             }
-            
-            // Return empty array if no components found (MediatR expects IEnumerable, not null)
-            return Array.CreateInstance(elementType, 0);
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                System.Diagnostics.Debug.WriteLine($"Error resolving IEnumerable<{elementType.Name}>: {ex.Message}");
+                // Return empty array instead of throwing - MediatR can handle empty collections
+                return Array.CreateInstance(elementType, 0);
+            }
         }
         
         // Handle single service resolution
-        if (_container.Kernel.HasComponent(serviceType))
+        try
         {
-            return _container.Resolve(serviceType);
+            if (_container.Kernel.HasComponent(serviceType))
+            {
+                return _container.Resolve(serviceType);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error resolving {serviceType.Name}: {ex.Message}");
         }
         
         return null;
