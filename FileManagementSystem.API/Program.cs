@@ -64,15 +64,47 @@ container.Install(new WindsorInstaller(builder.Configuration));
 builder.Services.AddSingleton<IWindsorContainer>(container);
 
 // Register business services from Windsor into ASP.NET Core DI
-// This allows controllers to use constructor injection with services registered in Windsor
-builder.Services.AddScoped<IUnitOfWork>(sp => container.Resolve<IUnitOfWork>());
-builder.Services.AddScoped<IFileRepository>(sp => container.Resolve<IFileRepository>());
-builder.Services.AddScoped<IFolderRepository>(sp => container.Resolve<IFolderRepository>());
-builder.Services.AddScoped<IMetadataService>(sp => container.Resolve<IMetadataService>());
-builder.Services.AddScoped<IStorageService>(sp => container.Resolve<IStorageService>());
-builder.Services.AddSingleton<IAuthenticationService>(sp => container.Resolve<IAuthenticationService>());
-builder.Services.AddSingleton<IAuthorizationService>(sp => container.Resolve<IAuthorizationService>());
-builder.Services.AddScoped<IMediator>(sp => container.Resolve<IMediator>());
+// Use factory that resolves from active Windsor scope (created by middleware)
+builder.Services.AddScoped<IUnitOfWork>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IUnitOfWork>();
+});
+builder.Services.AddScoped<IFileRepository>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IFileRepository>();
+});
+builder.Services.AddScoped<IFolderRepository>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IFolderRepository>();
+});
+builder.Services.AddScoped<IMetadataService>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IMetadataService>();
+});
+builder.Services.AddScoped<IStorageService>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IStorageService>();
+});
+builder.Services.AddSingleton<IAuthenticationService>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IAuthenticationService>();
+});
+builder.Services.AddSingleton<IAuthorizationService>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IAuthorizationService>();
+});
+builder.Services.AddScoped<IMediator>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IMediator>();
+});
 
 // DbContext - register directly for EF Core compatibility
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -97,6 +129,9 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
+
+// Windsor scope middleware - must be early in pipeline to create scope for request
+app.UseMiddleware<FileManagementSystem.API.Middleware.WindsorScopeMiddleware>();
 
 // Global exception handler middleware
 app.UseMiddleware<FileManagementSystem.API.Middleware.GlobalExceptionHandlerMiddleware>();
