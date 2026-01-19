@@ -4,7 +4,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using FluentValidation;
 using FileManagementSystem.Domain.Exceptions;
-using FileManagementSystem.Domain.Exceptions;
 
 namespace FileManagementSystem.Application.Behaviors;
 
