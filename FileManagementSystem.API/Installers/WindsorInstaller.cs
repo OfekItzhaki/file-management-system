@@ -91,8 +91,8 @@ public class WindsorInstaller : IWindsorInstaller
             Component.For<IStorageService>()
                 .ImplementedBy<StorageService>()
                 .DependsOn(
-                    Dependency.OnValue<IConfiguration>(_configuration),
-                    Dependency.OnComponent<ILogger<StorageService>, ILogger<StorageService>>()
+                    Dependency.OnValue<IConfiguration>(_configuration)
+                    // ILogger<StorageService> will be auto-wired by Castle Windsor
                 )
                 .LifestyleScoped()
         );
@@ -137,15 +137,13 @@ public class WindsorInstaller : IWindsorInstaller
             Component.For<IAuthenticationService>()
                 .ImplementedBy<AuthenticationService>()
                 .DependsOn(
-                    Dependency.OnValue<IConfiguration>(_configuration),
-                    Dependency.OnComponent<ILogger<AuthenticationService>, ILogger<AuthenticationService>>()
+                    Dependency.OnValue<IConfiguration>(_configuration)
+                    // ILogger<AuthenticationService> will be auto-wired by Castle Windsor
                 )
                 .LifestyleSingleton(),
             Component.For<IAuthorizationService>()
                 .ImplementedBy<AuthorizationService>()
-                .DependsOn(
-                    Dependency.OnComponent<ILogger<AuthorizationService>, ILogger<AuthorizationService>>()
-                )
+                // ILogger<AuthorizationService> and IServiceScopeFactory will be auto-wired by Castle Windsor
                 .LifestyleSingleton()
         );
 
