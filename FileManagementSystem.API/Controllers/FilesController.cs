@@ -31,17 +31,29 @@ public class FilesController : ControllerBase
         [FromQuery] int take = 50,
         CancellationToken cancellationToken = default)
     {
-        var query = new SearchFilesQuery(
-            SearchTerm: searchTerm,
-            Tags: tags,
-            IsPhoto: isPhoto,
-            FolderId: folderId,
-            Skip: skip,
-            Take: take
-        );
+        _logger.LogInformation("GetFiles called with searchTerm={SearchTerm}, isPhoto={IsPhoto}, folderId={FolderId}, skip={Skip}, take={Take}",
+            searchTerm, isPhoto, folderId, skip, take);
+        
+        try
+        {
+            var query = new SearchFilesQuery(
+                SearchTerm: searchTerm,
+                Tags: tags,
+                IsPhoto: isPhoto,
+                FolderId: folderId,
+                Skip: skip,
+                Take: take
+            );
 
-        var result = await _mediator.Send(query, cancellationToken);
-        return Ok(result);
+            var result = await _mediator.Send(query, cancellationToken);
+            _logger.LogInformation("GetFiles returned {Count} files", result.TotalCount);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in GetFiles");
+            throw; // Let middleware handle it
+        }
     }
 
     /// <summary>
@@ -72,30 +84,50 @@ public class FilesController : ControllerBase
     {
         if (file == null || file.Length == 0)
         {
-            return BadRequest("No file provided");
+            _logger.LogWarning("Upload attempt with no file or empty file");
+            return BadRequest("No file provided or file is empty");
         }
+
+        _logger.LogInformation("File upload started: {FileName}, Size={Size}, Destination={Destination}",
+            file.FileName, file.Length, destinationFolder ?? "default");
 
         // Save uploaded file to temp location
         var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
         
-        using (var stream = System.IO.File.Create(tempPath))
-        {
-            await file.CopyToAsync(stream, cancellationToken);
-        }
-
         try
         {
+            using (var stream = System.IO.File.Create(tempPath))
+            {
+                await file.CopyToAsync(stream, cancellationToken);
+            }
+
             var command = new UploadFileCommand(tempPath, destinationFolder);
             var result = await _mediator.Send(command, cancellationToken);
             
+            _logger.LogInformation("File upload completed: {FileId}, IsDuplicate={IsDuplicate}",
+                result.FileId, result.IsDuplicate);
+            
             return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading file: {FileName}", file.FileName);
+            throw; // Let middleware handle it
         }
         finally
         {
             // Clean up temp file if still exists
             if (System.IO.File.Exists(tempPath))
             {
-                try { System.IO.File.Delete(tempPath); } catch { }
+                try 
+                { 
+                    System.IO.File.Delete(tempPath);
+                    _logger.LogDebug("Cleaned up temp file: {TempPath}", tempPath);
+                } 
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete temp file: {TempPath}", tempPath);
+                }
             }
         }
     }

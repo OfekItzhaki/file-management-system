@@ -98,6 +98,9 @@ app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
 
+// Global exception handler middleware
+app.UseMiddleware<FileManagementSystem.API.Middleware.GlobalExceptionHandlerMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
