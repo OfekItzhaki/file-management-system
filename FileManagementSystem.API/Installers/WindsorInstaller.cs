@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.SubSystems.Configuration;
 using Castle.Windsor;
@@ -224,10 +225,32 @@ internal class WindsorServiceProvider : IServiceProvider
 
     public object? GetService(Type serviceType)
     {
+        // Handle IEnumerable<T> - MediatR needs this for pipeline behaviors
+        if (serviceType.IsGenericType && 
+            serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        {
+            var elementType = serviceType.GetGenericArguments()[0];
+            
+            if (_container.Kernel.HasComponent(elementType))
+            {
+                // Resolve all instances of the element type
+                var allInstances = _container.ResolveAll(elementType);
+                // Convert to array (arrays implement IEnumerable<T>)
+                var array = Array.CreateInstance(elementType, allInstances.Length);
+                Array.Copy(allInstances, array, allInstances.Length);
+                return array;
+            }
+            
+            // Return empty array if no components found (MediatR expects IEnumerable, not null)
+            return Array.CreateInstance(elementType, 0);
+        }
+        
+        // Handle single service resolution
         if (_container.Kernel.HasComponent(serviceType))
         {
             return _container.Resolve(serviceType);
         }
+        
         return null;
     }
 }
