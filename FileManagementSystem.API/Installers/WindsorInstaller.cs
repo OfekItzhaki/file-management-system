@@ -29,6 +29,13 @@ public class WindsorInstaller : IWindsorInstaller
 
     public void Install(IWindsorContainer container, IConfigurationStore store)
     {
+        // Register the container itself first so it can be resolved
+        container.Register(
+            Component.For<Castle.Windsor.IWindsorContainer>()
+                .Instance(container)
+                .LifestyleSingleton()
+        );
+        
         // DbContext - Scoped (managed by middleware)
         container.Register(
             Component.For<AppDbContext>()
@@ -157,7 +164,9 @@ public class WindsorInstaller : IWindsorInstaller
                 .UsingFactoryMethod(kernel =>
                 {
                     // Create a service provider adapter for MediatR
-                    var serviceProvider = new WindsorServiceProvider(kernel.Resolve<Castle.Windsor.IWindsorContainer>());
+                    // Resolve the container (now registered above)
+                    var windsorContainer = kernel.Resolve<Castle.Windsor.IWindsorContainer>();
+                    var serviceProvider = new WindsorServiceProvider(windsorContainer);
                     return new MediatR.Mediator(serviceProvider);
                 })
                 .LifestyleScoped()
