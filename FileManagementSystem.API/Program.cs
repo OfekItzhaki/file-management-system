@@ -131,6 +131,14 @@ builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
+// Register IServiceProvider in Windsor so it can resolve ASP.NET Core services (like ILogger<>)
+// This must be done AFTER the app is built so we have the final service provider
+container.Register(
+    Component.For<IServiceProvider>()
+        .Instance(app.Services)
+        .LifestyleSingleton()
+);
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {

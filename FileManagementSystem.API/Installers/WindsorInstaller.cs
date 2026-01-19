@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.SubSystems.Configuration;
+using Castle.MicroKernel.Lifestyle;
 using Castle.Windsor;
 using FileManagementSystem.Application.Interfaces;
 using FileManagementSystem.Infrastructure.Repositories;
@@ -45,6 +46,10 @@ public class WindsorInstaller : IWindsorInstaller
                 .Instance(container)
                 .LifestyleSingleton()
         );
+        
+        // Register IServiceProvider - will be set from Program.cs after container is created
+        // This allows resolving ASP.NET Core services (like ILogger<>) from ASP.NET Core DI
+        // Note: The actual instance will be registered in Program.cs after container creation
         
         // DbContext - Scoped (managed by middleware)
         container.Register(
@@ -108,18 +113,31 @@ public class WindsorInstaller : IWindsorInstaller
                 .LifestyleSingleton()
         );
 
-        // Register ILogger<T> factory
+        // Register ILogger<T> factory - try ASP.NET Core DI first, fallback to ILoggerFactory
         container.Register(
             Component.For(typeof(ILogger<>))
                 .UsingFactoryMethod((kernel, model, context) =>
                 {
-                    // Get the generic type argument (T) from ILogger<T>
-                    var loggerType = context.RequestedType.GetGenericArguments()[0];
+                    var requestedType = context.RequestedType;
                     
-                    // Resolve ILoggerFactory from container
+                    // Try to resolve from ASP.NET Core service provider first
+                    try
+                    {
+                        var serviceProvider = kernel.Resolve<IServiceProvider>();
+                        var logger = serviceProvider.GetService(requestedType);
+                        if (logger != null)
+                        {
+                            return logger;
+                        }
+                    }
+                    catch
+                    {
+                        // Fall through to factory method
+                    }
+                    
+                    // Fallback: Use ILoggerFactory
+                    var loggerType = requestedType.GetGenericArguments()[0];
                     var loggerFactory = kernel.Resolve<ILoggerFactory>();
-                    
-                    // Create logger for the requested type
                     return loggerFactory.CreateLogger(loggerType);
                 })
                 .LifestyleTransient()
@@ -172,17 +190,24 @@ internal class ServiceScopeFactoryAdapter : IServiceScopeFactory
 internal class WindsorServiceScope : IServiceScope
 {
     private readonly Castle.Windsor.IWindsorContainer _container;
-    private readonly IDisposable? _scope;
+    private readonly IDisposable _scope;
+    private readonly WindsorServiceProvider _serviceProvider;
 
     public WindsorServiceScope(Castle.Windsor.IWindsorContainer container)
     {
         _container = container;
-        // Castle Windsor doesn't have BeginScope - we'll manage scope differently
-        // For now, just store the container reference
-        _scope = null; // No scope management needed for this adapter
+        // Create an actual Castle Windsor scope
+        // This enables scoped lifestyle services to be resolved
+        // Fully qualify to avoid conflict with LoggerExtensions.BeginScope
+        var kernel = (Castle.MicroKernel.IKernel)_container.Kernel;
+        _scope = Castle.MicroKernel.Lifestyle.LifestyleExtensions.BeginScope(kernel);
+        // Create service provider that will resolve within this scope
+        // Castle Windsor uses ambient scope context, so services resolved
+        // while this scope is active will be scoped
+        _serviceProvider = new WindsorServiceProvider(_container);
     }
 
-    public IServiceProvider ServiceProvider => new WindsorServiceProvider(_container);
+    public IServiceProvider ServiceProvider => _serviceProvider;
 
     public void Dispose()
     {
