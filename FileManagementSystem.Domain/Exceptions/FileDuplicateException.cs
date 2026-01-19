@@ -1,6 +1,6 @@
 namespace FileManagementSystem.Domain.Exceptions;
 
-public class FileDuplicateException : Exception
+public class FileDuplicateException : DomainException
 {
     public string FilePath { get; }
     

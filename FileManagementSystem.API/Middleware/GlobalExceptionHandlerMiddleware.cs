@@ -47,6 +47,11 @@ public class GlobalExceptionHandlerMiddleware
                 Message = "Validation failed",
                 Errors = ex.Errors.Select(e => e.ErrorMessage).ToList()
             },
+            FileDuplicateException ex => new ErrorResponse
+            {
+                StatusCode = (int)HttpStatusCode.Conflict, // 409 Conflict is more appropriate for duplicates
+                Message = $"File already exists: {ex.FilePath}"
+            },
             DomainException ex => new ErrorResponse
             {
                 StatusCode = (int)HttpStatusCode.BadRequest,

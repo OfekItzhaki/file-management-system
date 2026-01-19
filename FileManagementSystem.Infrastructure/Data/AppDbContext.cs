@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using FileManagementSystem.Domain.Entities;
 
 namespace FileManagementSystem.Infrastructure.Data;
@@ -50,7 +51,11 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Tags)
                 .HasConversion(
                     v => string.Join(";", v),
-                    v => v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList());
+                    v => v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList())
+                .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                    (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+                    c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())) : 0,
+                    c => c != null ? c.ToList() : new List<string>()));
         });
         
         // Folder configuration
@@ -83,7 +88,11 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Roles)
                 .HasConversion(
                     v => string.Join(";", v),
-                    v => v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList());
+                    v => v.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList())
+                .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                    (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+                    c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())) : 0,
+                    c => c != null ? c.ToList() : new List<string>()));
         });
     }
 }

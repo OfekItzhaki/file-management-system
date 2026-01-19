@@ -56,6 +56,8 @@ public class FileRepository : Repository<FileItem>, IFileRepository
         }
         
         return await query
+            .OrderBy(f => f.CreatedDate) // Add OrderBy to fix EF Core warning
+            .ThenBy(f => f.Path)
             .Skip(skip)
             .Take(take)
             .ToListAsync(cancellationToken);
