@@ -16,6 +16,9 @@ using FileManagementSystem.Infrastructure.Data;
 using FileManagementSystem.Infrastructure.Repositories;
 using FileManagementSystem.Infrastructure.Services;
 using FileManagementSystem.Application.Behaviors;
+using Castle.Windsor;
+using Castle.MicroKernel.Registration;
+using FileManagementSystem.API.Installers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,46 +56,34 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Configure DbContext
+// Create Windsor container and install components
+var container = new WindsorContainer();
+container.Install(new WindsorInstaller(builder.Configuration));
+
+// Register Windsor container with ASP.NET Core DI
+builder.Services.AddSingleton<IWindsorContainer>(container);
+
+// Register business services from Windsor into ASP.NET Core DI
+// This allows controllers to use constructor injection with services registered in Windsor
+builder.Services.AddScoped<IUnitOfWork>(sp => container.Resolve<IUnitOfWork>());
+builder.Services.AddScoped<IFileRepository>(sp => container.Resolve<IFileRepository>());
+builder.Services.AddScoped<IFolderRepository>(sp => container.Resolve<IFolderRepository>());
+builder.Services.AddScoped<IMetadataService>(sp => container.Resolve<IMetadataService>());
+builder.Services.AddScoped<IStorageService>(sp => container.Resolve<IStorageService>());
+builder.Services.AddSingleton<IAuthenticationService>(sp => container.Resolve<IAuthenticationService>());
+builder.Services.AddSingleton<IAuthorizationService>(sp => container.Resolve<IAuthorizationService>());
+builder.Services.AddScoped<IMediator>(sp => container.Resolve<IMediator>());
+
+// DbContext - register directly for EF Core compatibility
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Data Source=filemanager.db";
-
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString)
         .EnableSensitiveDataLogging(false)
         .EnableServiceProviderCaching());
 
-// Add Memory Cache
+// Memory Cache
 builder.Services.AddMemoryCache();
-
-// Repositories and UnitOfWork
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IFileRepository, FileRepository>();
-builder.Services.AddScoped<IFolderRepository, CachedFolderRepository>();
-
-// Services
-builder.Services.AddScoped<IMetadataService, MetadataService>();
-builder.Services.AddScoped<IStorageService, StorageService>();
-// PathValidationService doesn't have an interface, register it directly if needed later
-// builder.Services.AddScoped<PathValidationService>();
-// Authentication/Authorization services must be Singleton because they're used by Singleton pipeline behaviors
-builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
-builder.Services.AddSingleton<IAuthorizationService, AuthorizationService>();
-
-// MediatR
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(ScanDirectoryCommand).Assembly);
-    
-    // Add pipeline behaviors (order matters)
-    cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
-    cfg.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
-    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-    cfg.AddOpenBehavior(typeof(ExceptionHandlingBehavior<,>));
-});
-
-// FluentValidation
-builder.Services.AddValidatorsFromAssembly(typeof(ScanDirectoryCommand).Assembly);
 
 var app = builder.Build();
 
@@ -147,4 +138,14 @@ using (var scope = app.Services.CreateScope())
 }
 
 Log.Logger.Information("File Management System API starting...");
-app.Run();
+
+try
+{
+    app.Run();
+}
+finally
+{
+    // Dispose Windsor container on shutdown
+    container?.Dispose();
+    Log.CloseAndFlush();
+}
