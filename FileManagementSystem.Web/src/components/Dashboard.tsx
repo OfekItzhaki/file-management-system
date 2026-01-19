@@ -4,6 +4,7 @@ import { fileApi, folderApi } from '../services/api';
 import FileList from './FileList';
 import FolderTree from './FolderTree';
 import SearchBar from './SearchBar';
+import FileUpload from './FileUpload';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +71,7 @@ const Dashboard = () => {
         </aside>
         
         <main style={{ flex: 1, overflow: 'auto', padding: '1rem' }}>
+          <FileUpload destinationFolder={selectedFolderId} />
           <FileList
             files={filteredFiles}
             isLoading={filesLoading}
