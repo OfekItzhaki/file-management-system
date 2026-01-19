@@ -22,7 +22,7 @@ public class ProgressObservableService : IProgressObservable, IDisposable
         _progressSubject = new Subject<ProgressReportDto>();
     }
 
-    public IObservable<ProgressReportDto> Progress => _progressSubject.AsObservable();
+    public IObservable<ProgressReportDto> Progress => _progressSubject;
 
     public void Report(ProgressReportDto progress)
     {
