@@ -1,3 +1,4 @@
+using System.IO;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using FileManagementSystem.Application.Commands;
@@ -30,11 +31,44 @@ public class DeleteFolderCommandHandler : IRequestHandler<DeleteFolderCommand, D
             return new DeleteFolderResult(false, "Folder not found");
         }
         
-        // Check if folder has subfolders
-        var subFolders = await _unitOfWork.Folders.GetByParentIdAsync(request.FolderId, cancellationToken);
-        if (subFolders.Count > 0)
+        // Prevent deletion of "Default" folder
+        // Check by name and by path (should end with "Default" or be exactly "Default")
+        var isDefaultFolder = folder.Name.Equals("Default", StringComparison.OrdinalIgnoreCase) ||
+            folder.Path.EndsWith(Path.DirectorySeparatorChar + "Default", StringComparison.OrdinalIgnoreCase) ||
+            folder.Path.EndsWith(Path.AltDirectorySeparatorChar + "Default", StringComparison.OrdinalIgnoreCase) ||
+            folder.Path.Equals("Default", StringComparison.OrdinalIgnoreCase);
+        
+        if (isDefaultFolder)
         {
-            return new DeleteFolderResult(false, "Cannot delete folder: it contains subfolders. Please delete subfolders first.");
+            _logger.LogWarning("Attempt to delete Default folder blocked: {FolderId}, Name: {Name}, Path: {Path}", 
+                folder.Id, folder.Name, folder.Path);
+            return new DeleteFolderResult(false, "Cannot delete the Default folder. This folder is required by the system.");
+        }
+        
+        // Get subfolders
+        var subFolders = await _unitOfWork.Folders.GetByParentIdAsync(request.FolderId, cancellationToken);
+        
+        // If folder has subfolders and deleteFiles is false, prevent deletion
+        if (subFolders.Count > 0 && !request.DeleteFiles)
+        {
+            return new DeleteFolderResult(false, "Cannot delete folder: it contains subfolders. Set deleteFiles=true to delete the folder, its subfolders, and files.");
+        }
+        
+        // If deleteFiles is true, recursively delete subfolders and their files
+        if (subFolders.Count > 0 && request.DeleteFiles)
+        {
+            _logger.LogInformation("Deleting {Count} subfolders recursively", subFolders.Count);
+            foreach (var subFolder in subFolders)
+            {
+                // Recursively delete subfolder with its files
+                var subFolderCommand = new DeleteFolderCommand(subFolder.Id, DeleteFiles: true);
+                var subFolderResult = await Handle(subFolderCommand, cancellationToken);
+                if (!subFolderResult.Success)
+                {
+                    _logger.LogWarning("Failed to delete subfolder {SubFolderId}: {Error}", subFolder.Id, subFolderResult.ErrorMessage);
+                    // Continue with other subfolders
+                }
+            }
         }
         
         // Check if folder has files
