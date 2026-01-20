@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Queries;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FileManagementSystem.API.Controllers;
 
@@ -71,6 +74,130 @@ public class FilesController : ControllerBase
         }
         
         return Ok(file);
+    }
+
+    /// <summary>
+    /// Download/Open a file by ID
+    /// </summary>
+    [HttpGet("{id}/download")]
+    public async Task<ActionResult> DownloadFile(Guid id, CancellationToken cancellationToken = default)
+    {
+        var query = new GetFileQuery(id);
+        var file = await _mediator.Send(query, cancellationToken);
+        
+        if (file == null)
+        {
+            _logger.LogWarning("Download attempt for non-existent file ID: {FileId}", id);
+            return NotFound();
+        }
+
+        try
+        {
+            var storageService = HttpContext.RequestServices.GetRequiredService<FileManagementSystem.Application.Interfaces.IStorageService>();
+            
+            // The database stores the display path (without .gz), but the file on disk has .gz if compressed
+            var storedPath = file.Path;
+            _logger.LogInformation("Download request: FileId={FileId}, StoredPath={StoredPath}, IsCompressed={IsCompressed}", 
+                id, storedPath, file.IsCompressed);
+            
+            string actualFilePath = null;
+            var triedPaths = new List<string>();
+            
+            // Build list of paths to try
+            // Always try both compressed and uncompressed versions to handle old files
+            var pathsToTry = new List<string>();
+            
+            // Helper to add both compressed and uncompressed versions
+            void AddPathVariations(string basePath)
+            {
+                if (string.IsNullOrEmpty(basePath)) return;
+                
+                // Add uncompressed version (original path)
+                pathsToTry.Add(basePath);
+                
+                // Add compressed version (with .gz) if it doesn't already have .gz
+                if (!basePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
+                {
+                    pathsToTry.Add(basePath + ".gz");
+                }
+            }
+            
+            // 1. The stored path as-is (try both compressed and uncompressed)
+            AddPathVariations(storedPath);
+            
+            // 2. If stored path is relative, try resolving it
+            if (!Path.IsPathRooted(storedPath))
+            {
+                // Try relative to storage directory
+                var storageBasePath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "FileManagementSystem",
+                    "Storage"
+                );
+                var resolvedPath = Path.GetFullPath(Path.Combine(storageBasePath, storedPath.TrimStart('\\', '/')));
+                AddPathVariations(resolvedPath);
+                
+                // Try relative to current working directory
+                try
+                {
+                    var workingDirPath = Path.GetFullPath(storedPath);
+                    if (workingDirPath != storedPath)
+                    {
+                        AddPathVariations(workingDirPath);
+                    }
+                }
+                catch
+                {
+                    // Ignore if path is invalid
+                }
+            }
+            
+            // Try each path until we find the file
+            foreach (var pathToTry in pathsToTry.Distinct())
+            {
+                triedPaths.Add(pathToTry);
+                _logger.LogDebug("Checking path: {Path} (Exists: {Exists})", pathToTry, System.IO.File.Exists(pathToTry));
+                if (System.IO.File.Exists(pathToTry))
+                {
+                    actualFilePath = pathToTry;
+                    _logger.LogInformation("Found file at: {FilePath}", actualFilePath);
+                    break;
+                }
+            }
+
+            if (actualFilePath == null)
+            {
+                _logger.LogError("File not found on disk for ID: {FileId}", id);
+                _logger.LogError("Stored path in DB: {StoredPath}", storedPath);
+                _logger.LogError("IsCompressed flag: {IsCompressed}", file.IsCompressed);
+                _logger.LogError("Tried {Count} paths:", triedPaths.Count);
+                foreach (var triedPath in triedPaths)
+                {
+                    var exists = System.IO.File.Exists(triedPath);
+                    _logger.LogError("  Path: {Path} | Exists: {Exists}", triedPath, exists);
+                }
+                return NotFound("File not found on server. Please check the API logs for details. The file may need to be re-uploaded.");
+            }
+
+            // Read file (automatically decompresses if needed)
+            var isActuallyCompressed = actualFilePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
+            var fileData = await storageService.ReadFileAsync(actualFilePath, isActuallyCompressed, cancellationToken);
+            
+            _logger.LogDebug("File read for download: ID={FileId}, OriginalFileName={FileName}, WasCompressed={WasCompressed}, Size={Size}", 
+                id, fileData.OriginalFileName, fileData.WasCompressed, fileData.Content.Length);
+            
+            return File(fileData.Content, file.MimeType, fileData.OriginalFileName);
+        }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogError(ex, "File not found for download: ID={FileId}, Path={FilePath}", id, file.Path);
+            return NotFound("File not found on server.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reading file for download: ID={FileId}, Path={FilePath}", id, file.Path);
+            return StatusCode(500, "Error reading file");
+        }
     }
 
     /// <summary>
