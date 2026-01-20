@@ -8,6 +8,7 @@ using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Queries;
 using FileManagementSystem.Application.DTOs;
 using FileManagementSystem.Presentation.ViewModels;
+using FileManagementSystem.Presentation.Services;
 
 namespace FileManagementSystem.Presentation;
 
@@ -15,16 +16,18 @@ public partial class MainWindow : Window
 {
     private readonly IMediator _mediator;
     private readonly ILogger<MainWindow> _logger;
+    private readonly FileUploadService _fileUploadService;
     private ObservableCollection<FolderViewModel> _folders;
     private ObservableCollection<FileItemDto> _files;
     private ProgressReportDto? _currentProgress;
     
-    public MainWindow(IMediator mediator, ILogger<MainWindow> logger)
+    public MainWindow(IMediator mediator, ILogger<MainWindow> logger, FileUploadService fileUploadService)
     {
         try
         {
             _mediator = mediator;
             _logger = logger;
+            _fileUploadService = fileUploadService;
             _folders = new ObservableCollection<FolderViewModel>();
             _files = new ObservableCollection<FileItemDto>();
             
@@ -191,10 +194,7 @@ public partial class MainWindow : Window
         
         try
         {
-            var originalFileName = System.IO.Path.GetFileName(dialog.FileName);
-            var command = new UploadFileCommand(dialog.FileName, originalFileName);
-            var result = await _mediator.Send(command);
-            
+            var result = await _fileUploadService.UploadFileAsync(dialog.FileName);
             MessageBox.Show($"File uploaded successfully: {result.FilePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             await LoadFilesAsync();
         }
@@ -390,25 +390,13 @@ public partial class MainWindow : Window
         if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
             var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            var validFiles = files.Where(File.Exists).ToList();
             
-            foreach (var file in files)
+            if (validFiles.Any())
             {
-                if (File.Exists(file))
-                {
-                    try
-                    {
-                        var originalFileName = System.IO.Path.GetFileName(file);
-                        var command = new UploadFileCommand(file, originalFileName);
-                        await _mediator.Send(command);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error uploading file via drag-drop: {FilePath}", file);
-                    }
-                }
+                await _fileUploadService.UploadFilesAsync(validFiles);
+                await LoadFilesAsync();
             }
-            
-            await LoadFilesAsync();
         }
     }
 }

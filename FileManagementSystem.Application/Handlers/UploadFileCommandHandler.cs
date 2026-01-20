@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Interfaces;
+using FileManagementSystem.Application.Services;
 using FileManagementSystem.Domain.Entities;
 using FileManagementSystem.Domain.Exceptions;
 
@@ -12,17 +13,20 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
     private readonly IUnitOfWork _unitOfWork;
     private readonly IStorageService _storageService;
     private readonly IMetadataService _metadataService;
+    private readonly UploadDestinationResolver _destinationResolver;
     private readonly ILogger<UploadFileCommandHandler> _logger;
     
     public UploadFileCommandHandler(
         IUnitOfWork unitOfWork,
         IStorageService storageService,
         IMetadataService metadataService,
+        UploadDestinationResolver destinationResolver,
         ILogger<UploadFileCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _storageService = storageService;
         _metadataService = metadataService;
+        _destinationResolver = destinationResolver;
         _logger = logger;
     }
     
@@ -67,66 +71,20 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
             throw new FileDuplicateException(normalizedSourcePath, hash);
         }
         
-        // Determine destination path - always store in managed storage location
-        string destinationPath;
-        var storageBasePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "FileManagementSystem",
-            "Storage"
-        );
-        
-        Folder? targetFolder = null;
-        
-        // If a folder ID is provided, use that folder
-        if (request.DestinationFolderId.HasValue)
-        {
-            targetFolder = await _unitOfWork.Folders.GetByIdAsync(request.DestinationFolderId.Value, cancellationToken);
-            if (targetFolder == null)
-            {
-                _logger.LogWarning("Destination folder not found: {FolderId}, using default folder", request.DestinationFolderId.Value);
-            }
-        }
-        
-        // If no folder specified or folder not found, use/create "Default" folder
-        if (targetFolder == null)
-        {
-            var defaultFolderPath = Path.Combine(storageBasePath, "Default");
-            try
-            {
-                targetFolder = await _unitOfWork.Folders.GetOrCreateByPathAsync(defaultFolderPath, cancellationToken);
-                _logger.LogInformation("Using default folder for upload: {FolderPath}", defaultFolderPath);
-            }
-            catch (InvalidOperationException)
-            {
-                // If default folder creation fails, create it manually
-                targetFolder = new Folder
-                {
-                    Name = "Default",
-                    Path = defaultFolderPath,
-                    ParentFolderId = null,
-                    CreatedDate = DateTime.UtcNow
-                };
-                await _unitOfWork.Folders.AddAsync(targetFolder, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-                _logger.LogInformation("Created default folder: {FolderPath}", defaultFolderPath);
-            }
-        }
+        // Resolve destination folder
+        var targetFolder = await _destinationResolver.ResolveDestinationFolderAsync(request.DestinationFolderId, cancellationToken);
         
         // Build destination path using the target folder
-        // Use the original filename from the request (not from temp path which has GUID)
         var originalFileName = request.OriginalFileName;
-        var fileName = Path.GetFileName(originalFileName); // Get just the filename part
-        destinationPath = Path.Combine(targetFolder.Path, fileName);
+        var fileName = Path.GetFileName(originalFileName);
+        var destinationPath = Path.Combine(targetFolder.Path, fileName);
         
         // Ensure the directory exists
         Directory.CreateDirectory(targetFolder.Path);
         
         // Always copy file to managed storage location (now compresses automatically)
         var compressedPath = await _storageService.SaveFileAsync(normalizedSourcePath, destinationPath, cancellationToken);
-        var displayPath = destinationPath; // Store storage path (without .gz) for file location
-        
-        // Use the target folder we already determined
-        var folder = targetFolder;
+        var displayPath = destinationPath;
         
         // Extract metadata for photos (need to decompress temporarily or read from original)
         // For now, we'll extract metadata from the original source file before compression
@@ -150,7 +108,7 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
             IsCompressed = true, // Mark as compressed
             MimeType = GetMimeType(originalFileName), // Use original filename for MIME type
             IsPhoto = isPhoto,
-            FolderId = folder?.Id,
+            FolderId = targetFolder.Id,
             CreatedDate = DateTime.UtcNow,
             PhotoDateTaken = photoMetadata?.DateTaken,
             CameraMake = photoMetadata?.CameraMake,

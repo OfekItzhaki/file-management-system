@@ -129,6 +129,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Memory Cache
 builder.Services.AddMemoryCache();
 
+// Application services
+builder.Services.AddScoped<FileManagementSystem.API.Services.FilePathResolver>();
+builder.Services.AddScoped<FileManagementSystem.Application.Services.UploadDestinationResolver>();
+
 var app = builder.Build();
 
 // Register IServiceProvider in Windsor so it can resolve ASP.NET Core services (like ILogger<>)
@@ -162,208 +166,13 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Ensure database is created
+// Ensure database is created and initialized
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
-    if (dbContext.Database.EnsureCreated())
-    {
-        Log.Logger.Information("Database created successfully");
-        
-        // Seed initial data
-        await FileManagementSystem.Infrastructure.Data.SeedData.SeedAsync(dbContext);
-        Log.Logger.Information("Database seeded with initial data");
-    }
-    else
-    {
-        // Try to apply migrations if they exist
-        try
-        {
-            await dbContext.Database.MigrateAsync();
-            Log.Logger.Information("Database migrations applied successfully");
-        }
-        catch (Exception ex)
-        {
-            Log.Logger.Warning(ex, "No migrations found or migration failed, using existing database");
-        }
-        
-        // Ensure required columns exist (manual migration for schema updates)
-        try
-        {
-            var connection = dbContext.Database.GetDbConnection();
-            if (connection.State != System.Data.ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-            }
-            
-            try
-            {
-                // Check and add IsCompressed column if needed
-                var checkCompressedCommand = connection.CreateCommand();
-                checkCompressedCommand.CommandText = "SELECT COUNT(*) FROM pragma_table_info('FileItems') WHERE name='IsCompressed'";
-                var compressedExists = Convert.ToInt32(await checkCompressedCommand.ExecuteScalarAsync()) > 0;
-                
-                if (!compressedExists)
-                {
-                    var addCompressedCommand = connection.CreateCommand();
-                    addCompressedCommand.CommandText = "ALTER TABLE FileItems ADD COLUMN IsCompressed INTEGER NOT NULL DEFAULT 1";
-                    await addCompressedCommand.ExecuteNonQueryAsync();
-                    Log.Logger.Information("Added IsCompressed column to FileItems table");
-                }
-                
-                // Check and add FileName column if needed
-                var checkFileNameCommand = connection.CreateCommand();
-                checkFileNameCommand.CommandText = "SELECT COUNT(*) FROM pragma_table_info('FileItems') WHERE name='FileName'";
-                var fileNameExists = Convert.ToInt32(await checkFileNameCommand.ExecuteScalarAsync()) > 0;
-                
-                if (!fileNameExists)
-                {
-                    var addFileNameCommand = connection.CreateCommand();
-                    addFileNameCommand.CommandText = "ALTER TABLE FileItems ADD COLUMN FileName TEXT";
-                    await addFileNameCommand.ExecuteNonQueryAsync();
-                    Log.Logger.Information("Added FileName column to FileItems table");
-                }
-                
-                // Populate FileName for existing files from Path using raw SQL to avoid NULL reading issues
-                // Run this on every startup to keep data consistent
-                try
-                {
-                    var updateCommand = connection.CreateCommand();
-                    // Update NULL FileName values - set to empty string to allow EF Core to read them
-                    updateCommand.CommandText = @"
-                        UPDATE FileItems 
-                        SET FileName = '' 
-                        WHERE FileName IS NULL";
-                    var nullCount = await updateCommand.ExecuteNonQueryAsync();
-                    
-                    if (nullCount > 0)
-                    {
-                        Log.Logger.Information("Set {Count} NULL FileName values to empty string", nullCount);
-                    }
-                    
-                    // Populate empty FileName values from Path
-                    // SQLite doesn't have reverse(), so we'll use C# to extract filenames
-                    var selectCommand = connection.CreateCommand();
-                    selectCommand.CommandText = @"
-                        SELECT Id, Path 
-                        FROM FileItems 
-                        WHERE (FileName IS NULL OR FileName = '') AND Path IS NOT NULL AND Path != ''";
-                    
-                    using (var reader = await selectCommand.ExecuteReaderAsync())
-                    {
-                        var updateCommands = new List<(Guid Id, string FileName)>();
-                        
-                        while (await reader.ReadAsync())
-                        {
-                            var fileId = reader.GetGuid(0);
-                            var path = reader.GetString(1);
-                            
-                            // Extract filename from path (handles both / and \)
-                            var fileName = Path.GetFileName(path);
-                            if (!string.IsNullOrEmpty(fileName))
-                            {
-                                updateCommands.Add((fileId, fileName));
-                            }
-                        }
-                        
-                        // Update each file with its extracted filename
-                        foreach (var (id, fileName) in updateCommands)
-                        {
-                            var updateCmd = connection.CreateCommand();
-                            updateCmd.CommandText = "UPDATE FileItems SET FileName = @fileName WHERE Id = @id";
-                            var param1 = updateCmd.CreateParameter();
-                            param1.ParameterName = "@fileName";
-                            param1.Value = fileName;
-                            updateCmd.Parameters.Add(param1);
-                            var param2 = updateCmd.CreateParameter();
-                            param2.ParameterName = "@id";
-                            param2.Value = id;
-                            updateCmd.Parameters.Add(param2);
-                            await updateCmd.ExecuteNonQueryAsync();
-                        }
-                        
-                        if (updateCommands.Count > 0)
-                        {
-                            Log.Logger.Information("Populated FileName for {Count} files from Path using C# extraction", updateCommands.Count);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Logger.Warning(ex, "Error updating FileName values");
-                }
-            }
-            finally
-            {
-                if (connection.State == System.Data.ConnectionState.Open)
-                {
-                    await connection.CloseAsync();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Logger.Warning(ex, "Could not add columns automatically. You may need to run manual migrations");
-        }
-        
-        // Seed data if users don't exist
-        if (!dbContext.Set<FileManagementSystem.Domain.Entities.User>().Any())
-        {
-            await FileManagementSystem.Infrastructure.Data.SeedData.SeedAsync(dbContext);
-            Log.Logger.Information("Database seeded with initial data");
-        }
-        
-        // Rename any "C:" folder to "Default" folder
-        try
-        {
-            var cFolder = await dbContext.Set<FileManagementSystem.Domain.Entities.Folder>()
-                .FirstOrDefaultAsync(f => f.Name == "C:" || f.Path == "C:" || f.Path == "C:\\");
-            
-            if (cFolder != null)
-            {
-                var storageBasePath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "FileManagementSystem",
-                    "Storage"
-                );
-                var defaultFolderPath = Path.Combine(storageBasePath, "Default");
-                
-                // Check if Default folder already exists
-                var defaultFolder = await dbContext.Set<FileManagementSystem.Domain.Entities.Folder>()
-                    .FirstOrDefaultAsync(f => f.Path == defaultFolderPath);
-                
-                if (defaultFolder == null)
-                {
-                    // Rename C: folder to Default
-                    cFolder.Name = "Default";
-                    cFolder.Path = defaultFolderPath;
-                    await dbContext.SaveChangesAsync();
-                    Log.Logger.Information("Renamed C: folder to Default folder");
-                }
-                else
-                {
-                    // Default folder exists, move files from C: to Default and delete C: folder
-                    var filesInCFolder = await dbContext.Set<FileManagementSystem.Domain.Entities.FileItem>()
-                        .Where(f => f.FolderId == cFolder.Id)
-                        .ToListAsync();
-                    
-                    foreach (var file in filesInCFolder)
-                    {
-                        file.FolderId = defaultFolder.Id;
-                    }
-                    
-                    dbContext.Set<FileManagementSystem.Domain.Entities.Folder>().Remove(cFolder);
-                    await dbContext.SaveChangesAsync();
-                    Log.Logger.Information("Moved {Count} files from C: folder to Default folder and deleted C: folder", filesInCFolder.Count);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Logger.Warning(ex, "Could not rename C: folder to Default folder");
-        }
-    }
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<FileManagementSystem.Infrastructure.Data.DatabaseInitializer>>();
+    var initializer = new FileManagementSystem.Infrastructure.Data.DatabaseInitializer(dbContext, logger);
+    await initializer.InitializeAsync();
 }
 
 Log.Logger.Information("File Management System API starting...");

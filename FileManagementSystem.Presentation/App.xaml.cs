@@ -92,6 +92,9 @@ public partial class App : System.Windows.Application
                     // FluentValidation
                     services.AddValidatorsFromAssembly(typeof(ScanDirectoryCommand).Assembly);
                     
+                    // Presentation services
+                    services.AddScoped<FileUploadService>();
+                    
                     // WPF
                     services.AddSingleton<MainWindow>();
                 });

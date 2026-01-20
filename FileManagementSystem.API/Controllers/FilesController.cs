@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Queries;
+using FileManagementSystem.API.Services;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -14,11 +15,13 @@ public class FilesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<FilesController> _logger;
+    private readonly FilePathResolver _filePathResolver;
 
-    public FilesController(IMediator mediator, ILogger<FilesController> logger)
+    public FilesController(IMediator mediator, ILogger<FilesController> logger, FilePathResolver filePathResolver)
     {
         _mediator = mediator;
         _logger = logger;
+        _filePathResolver = filePathResolver;
     }
 
     /// <summary>
@@ -106,106 +109,14 @@ public class FilesController : ControllerBase
         {
             var storageService = HttpContext.RequestServices.GetRequiredService<FileManagementSystem.Application.Interfaces.IStorageService>();
             
-            // The database stores the display path (without .gz), but the file on disk has .gz if compressed
             var storedPath = file.Path;
             _logger.LogInformation("Download request: FileId={FileId}, StoredPath={StoredPath}, IsCompressed={IsCompressed}", 
                 id, storedPath, file.IsCompressed);
             
-            string actualFilePath = null;
-            var triedPaths = new List<string>();
-            
-            // Build list of paths to try
-            // Always try both compressed and uncompressed versions to handle old files
-            var pathsToTry = new List<string>();
-            
-            // Helper to add both compressed and uncompressed versions
-            void AddPathVariations(string basePath)
-            {
-                if (string.IsNullOrEmpty(basePath)) return;
-                
-                // Add uncompressed version (original path)
-                pathsToTry.Add(basePath);
-                
-                // Add compressed version (with .gz) if it doesn't already have .gz
-                if (!basePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
-                {
-                    pathsToTry.Add(basePath + ".gz");
-                }
-            }
-            
-            // 1. The stored path as-is (try both compressed and uncompressed)
-            AddPathVariations(storedPath);
-            
-            // 2. If stored path is relative, try resolving it
-            if (!Path.IsPathRooted(storedPath))
-            {
-                // Try relative to storage directory
-                var storageBasePath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "FileManagementSystem",
-                    "Storage"
-                );
-                var resolvedPath = Path.GetFullPath(Path.Combine(storageBasePath, storedPath.TrimStart('\\', '/')));
-                AddPathVariations(resolvedPath);
-                
-                // Try relative to current working directory
-                try
-                {
-                    var workingDirPath = Path.GetFullPath(storedPath);
-                    if (workingDirPath != storedPath)
-                    {
-                        AddPathVariations(workingDirPath);
-                    }
-                }
-                catch
-                {
-                    // Ignore if path is invalid
-                }
-            }
-            
-            // Try each path until we find the file
-            foreach (var pathToTry in pathsToTry.Distinct())
-            {
-                triedPaths.Add(pathToTry);
-                var exists = System.IO.File.Exists(pathToTry);
-                _logger.LogInformation("Checking path: {Path} | Exists: {Exists}", pathToTry, exists);
-                if (exists)
-                {
-                    actualFilePath = pathToTry;
-                    _logger.LogInformation("Found file at: {FilePath}", actualFilePath);
-                    break;
-                }
-            }
-            
-            // If still not found and path is absolute, try to list the directory to see what files are there
-            if (actualFilePath == null && Path.IsPathRooted(storedPath))
-            {
-                try
-                {
-                    var directory = Path.GetDirectoryName(storedPath);
-                    if (!string.IsNullOrEmpty(directory) && System.IO.Directory.Exists(directory))
-                    {
-                        var filesInDir = System.IO.Directory.GetFiles(directory);
-                        _logger.LogWarning("Directory exists but file not found. Files in directory: {Files}", string.Join(", ", filesInDir.Select(Path.GetFileName)));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not list directory contents");
-                }
-            }
+            var actualFilePath = _filePathResolver.ResolveFilePath(storedPath, file.IsCompressed);
 
             if (actualFilePath == null)
             {
-                _logger.LogError("File not found on disk for ID: {FileId}", id);
-                _logger.LogError("Stored path in DB: {StoredPath}", storedPath);
-                _logger.LogError("IsCompressed flag: {IsCompressed}", file.IsCompressed);
-                _logger.LogError("Tried {Count} paths:", triedPaths.Count);
-                foreach (var triedPath in triedPaths)
-                {
-                    var exists = System.IO.File.Exists(triedPath);
-                    _logger.LogError("  Path: {Path} | Exists: {Exists}", triedPath, exists);
-                }
                 return NotFound("File not found on server. Please check the API logs for details. The file may need to be re-uploaded.");
             }
 
