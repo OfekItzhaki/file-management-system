@@ -40,9 +40,7 @@ const SearchBar = ({
     }} className={isMobile ? 'search-bar-container' : ''}>
       <div style={{ 
         position: 'relative', 
-        flex: '0 0 auto', 
-        width: '280px',
-        maxWidth: '280px',
+        flex: '2 1 0%',
         minWidth: '200px'
       }}>
         <input
@@ -86,11 +84,12 @@ const SearchBar = ({
         display: 'flex', 
         gap: '0.75rem',
         alignItems: 'center',
-        flexShrink: 0,
+        flex: '1 0 auto',
         flexWrap: 'nowrap',
         minWidth: 'fit-content',
         position: 'relative',
-        zIndex: 10
+        zIndex: 10,
+        justifyContent: 'flex-end'
       }}>
         <label style={{ 
           display: 'flex', 

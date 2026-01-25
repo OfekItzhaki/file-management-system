@@ -1,24 +1,24 @@
-/* Desktop: prevent wrapping and overlap */
+/* Desktop: prevent wrapping and overlap, fill header space */
 .search-bar-container,
 div[style*="flexWrap"] {
   flex-wrap: nowrap !important;
+  width: 100% !important;
 }
 
 .search-bar-container > div:first-child {
-  flex: 0 0 auto !important;
-  width: 280px !important;
-  max-width: 280px !important;
-  min-width: 200px;
+  flex: 2 1 0% !important;
+  min-width: 200px !important;
   position: relative;
   z-index: 1;
 }
 
 .search-bar-container > div:nth-child(2) {
-  flex-shrink: 0 !important;
+  flex: 1 0 auto !important;
   min-width: fit-content;
   position: relative;
   z-index: 10;
   margin-left: 0;
+  justify-content: flex-end;
 }
 
 /* Mobile responsive for search bar */
