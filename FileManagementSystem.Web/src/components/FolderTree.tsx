@@ -145,7 +145,9 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
             gap: '0.5rem',
             position: 'relative',
             border: isSelected ? '1px solid rgba(102, 126, 234, 0.2)' : '1px solid transparent',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            minWidth: 0,
+            overflow: 'hidden'
           }}
           onMouseEnter={(e) => {
             if (!isSelected) {
