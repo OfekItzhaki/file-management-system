@@ -1,3 +1,20 @@
+/* Desktop: prevent wrapping */
+.search-bar-container,
+div[style*="flexWrap"] {
+  flex-wrap: nowrap !important;
+}
+
+.search-bar-container > div:first-child {
+  flex: 0 1 350px !important;
+  max-width: 350px !important;
+  min-width: 200px;
+}
+
+.search-bar-container > div:nth-child(2) {
+  flex-shrink: 0 !important;
+  min-width: fit-content;
+}
+
 /* Mobile responsive for search bar */
 @media (max-width: 768px) {
   .search-bar-container {
@@ -7,6 +24,7 @@
 
   .search-bar-container > div:first-child {
     max-width: 100% !important;
+    flex: 1 1 auto !important;
     margin-bottom: 0.75rem;
   }
 

@@ -95,15 +95,16 @@ const FolderTree = ({ folders, onFolderSelect, selectedFolderId }: FolderTreePro
   };
 
   const handleDeleteFolder = (folder: FolderDto) => {
-    if (folder.fileCount > 0 || folder.subFolderCount > 0) {
-      const message = `Delete folder "${folder.name}"?${folder.fileCount > 0 ? `\nThis folder contains ${folder.fileCount} file(s).` : ''}${folder.subFolderCount > 0 ? `\nThis folder contains ${folder.subFolderCount} subfolder(s).` : ''}\n\nFiles and subfolders will be deleted.`;
-      if (window.confirm(message)) {
-        deleteMutation.mutate({ id: folder.id, deleteFiles: true });
-      }
-    } else {
-      if (window.confirm(`Delete folder "${folder.name}"?`)) {
-        deleteMutation.mutate({ id: folder.id, deleteFiles: false });
-      }
+    // Always use deleteFiles=true to handle old folders that might have files/subfolders
+    // that aren't properly counted, or to ensure complete deletion
+    const hasContent = folder.fileCount > 0 || folder.subFolderCount > 0;
+    const message = hasContent 
+      ? `Delete folder "${folder.name}"?${folder.fileCount > 0 ? `\nThis folder contains ${folder.fileCount} file(s).` : ''}${folder.subFolderCount > 0 ? `\nThis folder contains ${folder.subFolderCount} subfolder(s).` : ''}\n\nFiles and subfolders will be deleted.`
+      : `Delete folder "${folder.name}"?`;
+    
+    if (window.confirm(message)) {
+      // Always set deleteFiles=true to ensure old folders with hidden content can be deleted
+      deleteMutation.mutate({ id: folder.id, deleteFiles: true });
     }
   };
 
