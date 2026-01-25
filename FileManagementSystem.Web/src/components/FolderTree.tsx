@@ -132,8 +132,8 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
           onMouseEnter={() => setHoveredFolderId(folder.id)}
           onMouseLeave={() => setHoveredFolderId(null)}
           style={{
-            padding: '0.75rem 1rem',
-            paddingLeft: `${level * 1.5 + 1}rem`,
+            padding: '0.5rem 0.75rem',
+            paddingLeft: `${level * 1.5 + 0.75}rem`,
             cursor: 'pointer',
             background: isSelected 
               ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)' 
@@ -271,7 +271,13 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
                 )}
               </span>
               {/* Show buttons on hover only */}
-              <div style={{ display: 'flex', gap: '0.375rem', opacity: isHovered || isMobile ? 1 : 0, transition: 'opacity 0.2s' }}>
+              <div style={{ 
+                display: 'flex', 
+                gap: '0.375rem', 
+                opacity: isHovered || isMobile ? 1 : 0, 
+                transition: 'opacity 0.2s',
+                pointerEvents: isHovered || isMobile ? 'auto' : 'none'
+              }}>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
