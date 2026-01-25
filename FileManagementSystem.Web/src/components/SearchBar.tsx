@@ -165,7 +165,7 @@ const SearchBar = memo(({
         position: 'relative',
         zIndex: 10,
         justifyContent: 'flex-end',
-        marginLeft: '0'
+        marginLeft: '-0.5rem'
       }}>
         <label style={{ 
           display: 'flex', 
