@@ -24,14 +24,19 @@ const DashboardHeader = memo(({
   isDocumentOnly: boolean;
   onDocumentOnlyChange: (value: boolean) => void;
 }, (prevProps, nextProps) => {
-  // Custom comparison: only re-render if filters change, ignore searchTerm changes
-  return (
+  // Custom comparison: return true if props are equal (don't re-render)
+  // We ignore searchTerm changes - only re-render if filters or callbacks change
+  const filtersEqual = (
     prevProps.isPhotoOnly === nextProps.isPhotoOnly &&
-    prevProps.isDocumentOnly === nextProps.isDocumentOnly &&
+    prevProps.isDocumentOnly === nextProps.isDocumentOnly
+  );
+  const callbacksEqual = (
     prevProps.onSearchChange === nextProps.onSearchChange &&
     prevProps.onPhotoOnlyChange === nextProps.onPhotoOnlyChange &&
     prevProps.onDocumentOnlyChange === nextProps.onDocumentOnlyChange
   );
+  // Return true (don't re-render) if filters and callbacks are equal, regardless of searchTerm
+  return filtersEqual && callbacksEqual;
 }) => (
   <header className="dashboard-header">
     <div className="dashboard-header-overlay"></div>
