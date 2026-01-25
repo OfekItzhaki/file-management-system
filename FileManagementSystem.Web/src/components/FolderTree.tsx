@@ -129,11 +129,21 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
     return (
       <div key={folder.id}>
         <div
-          onMouseEnter={() => setHoveredFolderId(folder.id)}
-          onMouseLeave={() => setHoveredFolderId(null)}
+          onMouseEnter={(e) => {
+            setHoveredFolderId(folder.id);
+            if (!isSelected) {
+              e.currentTarget.style.background = '#f8fafc';
+            }
+          }}
+          onMouseLeave={(e) => {
+            setHoveredFolderId(null);
+            if (!isSelected) {
+              e.currentTarget.style.background = 'transparent';
+            }
+          }}
           style={{
             padding: '0.5rem 0.75rem',
-            paddingLeft: `${level * 1.5 + 0.75}rem`,
+            paddingLeft: level === 0 ? '1rem' : `${level * 1.5 + 0.75}rem`,
             cursor: 'pointer',
             background: isSelected 
               ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)' 
@@ -148,16 +158,6 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
             transition: 'all 0.2s',
             minWidth: 0,
             overflow: 'hidden'
-          }}
-          onMouseEnter={(e) => {
-            if (!isSelected) {
-              e.currentTarget.style.background = '#f8fafc';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isSelected) {
-              e.currentTarget.style.background = 'transparent';
-            }
           }}
         >
           {isEditing ? (
@@ -271,12 +271,11 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
                 )}
               </span>
               {/* Show buttons on hover only */}
+              {(isHovered || isMobile) && (
               <div style={{ 
                 display: 'flex', 
-                gap: '0.375rem', 
-                opacity: isHovered || isMobile ? 1 : 0, 
-                transition: 'opacity 0.2s',
-                pointerEvents: isHovered || isMobile ? 'auto' : 'none'
+                gap: '0.375rem',
+                transition: 'opacity 0.2s'
               }}>
                   <button
                     onClick={(e) => {
@@ -347,6 +346,7 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
                     🗑️
                   </button>
                 </div>
+              )}
             </>
           )}
         </div>
