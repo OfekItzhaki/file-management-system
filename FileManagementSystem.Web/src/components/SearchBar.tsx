@@ -72,7 +72,7 @@ const SearchBar = memo(({
         minWidth: '200px',
         display: 'flex',
         alignItems: 'center',
-        gap: '0.25rem'
+        gap: '0'
       }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <input

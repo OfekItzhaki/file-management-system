@@ -69,7 +69,20 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
       }
     },
     onError: (error: any) => {
-      alert(`Failed to delete folder: ${error.response?.data?.errorMessage || error.response?.data?.message || error.message || 'Unknown error'}`);
+      // Handle ASP.NET Core BadRequest response - can be string or object
+      let errorMessage = 'Unknown error';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.errorMessage) {
+          errorMessage = error.response.data.errorMessage;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      alert(errorMessage);
     },
   });
 
