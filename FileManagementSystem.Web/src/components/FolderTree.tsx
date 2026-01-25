@@ -474,12 +474,13 @@ const FolderTree = ({ folders, onFolderSelect, selectedFolderId }: FolderTreePro
         onClick={() => onFolderSelect(undefined)}
         style={{
           padding: '0.75rem 1rem',
+          paddingLeft: '1rem',
           cursor: 'pointer',
           background: selectedFolderId === undefined 
             ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)' 
             : 'transparent',
           borderRadius: '8px',
-          marginBottom: '0.75rem',
+          marginBottom: '4px',
           fontWeight: '600',
           fontSize: '0.95rem',
           color: selectedFolderId === undefined ? '#667eea' : '#475569',
