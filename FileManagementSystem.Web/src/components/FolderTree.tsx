@@ -243,12 +243,17 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
             <>
               <span
                 onClick={() => onFolderSelect(folder.id)}
+                title={folder.name}
                 style={{ 
                   flex: 1,
+                  minWidth: 0,
                   fontSize: '0.95rem',
                   fontWeight: isSelected ? '600' : '500',
                   color: isSelected ? '#667eea' : '#475569',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 📁 {folder.name}
