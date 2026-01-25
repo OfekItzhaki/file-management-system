@@ -70,8 +70,7 @@ const SearchBar = memo(({
         alignItems: 'center', 
         flexWrap: 'nowrap',
         flexDirection: 'row',
-        maxWidth: '1200px',
-        width: '100%'
+        flex: '0 0 auto'
       }}>
         <div style={{ 
           position: 'relative', 
