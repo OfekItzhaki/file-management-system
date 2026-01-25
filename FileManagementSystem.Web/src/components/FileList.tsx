@@ -90,7 +90,6 @@ const FileList = ({ files, isLoading, totalCount }: FileListProps) => {
       <div style={{ 
         overflowX: 'auto', 
         marginTop: '1rem', 
-        minHeight: '260px',
         borderRadius: '12px',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         backgroundColor: '#ffffff',
@@ -100,7 +99,8 @@ const FileList = ({ files, isLoading, totalCount }: FileListProps) => {
           width: '100%', 
           borderCollapse: 'collapse', 
           tableLayout: 'fixed',
-          backgroundColor: '#fff'
+          backgroundColor: '#fff',
+          margin: 0
         }}>
             <colgroup>
               <col style={{ width: '30%' }} />
@@ -195,7 +195,8 @@ const FileList = ({ files, isLoading, totalCount }: FileListProps) => {
                     style={{ 
                       borderBottom: '1px solid #f1f5f9',
                       backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      height: 'auto'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = '#f0f9ff';
@@ -209,59 +210,65 @@ const FileList = ({ files, isLoading, totalCount }: FileListProps) => {
                     }}
                   >
                     <td style={{ 
-                      padding: '1rem', 
+                      padding: '0.75rem 1rem', 
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       fontSize: '0.95rem',
                       color: '#1e293b',
                       fontWeight: '500',
-                      maxWidth: 0
+                      maxWidth: 0,
+                      verticalAlign: 'middle'
                     }} title={fileName}>
                       {fileName}
                     </td>
                     <td style={{ 
                       textAlign: 'right', 
-                      padding: '1rem', 
+                      padding: '0.75rem 1rem', 
                       whiteSpace: 'nowrap',
                       fontSize: '0.9rem',
                       color: '#64748b',
-                      fontWeight: '500'
+                      fontWeight: '500',
+                      verticalAlign: 'middle'
                     }}>
                       {formatSize(file.size)}
                     </td>
                     <td style={{ 
-                      padding: '1rem', 
+                      padding: '0.75rem 1rem', 
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       fontSize: '0.875rem',
-                      color: '#64748b'
+                      color: '#64748b',
+                      verticalAlign: 'middle'
                     }} title={file.mimeType}>
                       {file.mimeType || '-'}
                     </td>
                     <td style={{ 
-                      padding: '1rem', 
+                      padding: '0.75rem 1rem', 
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       fontSize: '0.875rem',
-                      color: '#64748b'
+                      color: '#64748b',
+                      verticalAlign: 'middle'
                     }} title={file.tags.join(', ') || ''}>
                       {file.tags.length > 0 ? file.tags.join(', ') : '-'}
                     </td>
                     <td style={{ 
-                      padding: '1rem', 
+                      padding: '0.75rem 1rem', 
                       whiteSpace: 'nowrap',
                       fontSize: '0.9rem',
                       color: '#64748b',
-                      fontWeight: '500'
+                      fontWeight: '500',
+                      verticalAlign: 'middle'
                     }}>
                       {new Date(file.createdDate).toLocaleDateString()}
                     </td>
                     <td style={{ 
-                      padding: '1rem', 
-                      textAlign: 'center'
+                      padding: '0.75rem 1rem', 
+                      textAlign: 'center',
+                      verticalAlign: 'middle'
                     }}>
                       <div style={{ 
                         display: 'flex', 

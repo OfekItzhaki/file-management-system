@@ -33,10 +33,11 @@ const SearchBar = ({
       display: 'flex', 
       gap: '1rem', 
       alignItems: 'center', 
-      flexWrap: isMobile ? 'wrap' : 'nowrap',
-      flexDirection: 'row'
+      flexWrap: 'nowrap',
+      flexDirection: 'row',
+      width: '100%'
     }} className={isMobile ? 'search-bar-container' : ''}>
-      <div style={{ position: 'relative', flex: '1 1 auto', minWidth: '200px', maxWidth: '500px' }}>
+      <div style={{ position: 'relative', flex: '0 1 auto', minWidth: '200px', maxWidth: '400px', width: '100%' }}>
         <input
           type="text"
           placeholder="Search files..."
@@ -76,7 +77,8 @@ const SearchBar = ({
         display: 'flex', 
         gap: '0.75rem',
         alignItems: 'center',
-        flexShrink: 0
+        flexShrink: 0,
+        flexWrap: 'nowrap'
       }}>
         <label style={{ 
           display: 'flex', 

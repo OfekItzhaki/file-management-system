@@ -249,9 +249,8 @@ const FolderTree = ({ folders, onFolderSelect, selectedFolderId }: FolderTreePro
                   </span>
                 )}
               </span>
-              {/* Always show buttons on mobile, show on hover on desktop */}
-              {(isHovered || isMobile) && (
-                <div style={{ display: 'flex', gap: '0.375rem' }}>
+              {/* Always show buttons - they're small and useful */}
+              <div style={{ display: 'flex', gap: '0.375rem', opacity: isHovered || isMobile ? 1 : 0.3, transition: 'opacity 0.2s' }}>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -321,7 +320,6 @@ const FolderTree = ({ folders, onFolderSelect, selectedFolderId }: FolderTreePro
                     🗑️
                   </button>
                 </div>
-              )}
             </>
           )}
         </div>
