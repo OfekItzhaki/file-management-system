@@ -240,7 +240,8 @@ const FolderTree = ({ folders, onFolderSelect, selectedFolderId }: FolderTreePro
                   </span>
                 )}
               </span>
-              {isHovered && (
+              {/* Always show buttons on mobile, show on hover on desktop */}
+              {(isHovered || isMobile) && (
                 <div style={{ display: 'flex', gap: '0.375rem' }}>
                   <button
                     onClick={(e) => {

@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react';
+import './SearchBar.css';
+
 interface SearchBarProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -15,14 +18,25 @@ const SearchBar = ({
   isDocumentOnly,
   onDocumentOnlyChange
 }: SearchBarProps) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div style={{ 
       display: 'flex', 
       gap: '1rem', 
       alignItems: 'center', 
-      flexWrap: 'wrap'
-    }}>
-      <div style={{ position: 'relative', flex: 1, maxWidth: '500px' }}>
+      flexWrap: isMobile ? 'wrap' : 'nowrap',
+      flexDirection: 'row'
+    }} className={isMobile ? 'search-bar-container' : ''}>
+      <div style={{ position: 'relative', flex: '1 1 auto', minWidth: '200px', maxWidth: '500px' }}>
         <input
           type="text"
           placeholder="Search files..."
@@ -58,59 +72,68 @@ const SearchBar = ({
           color: 'rgba(255, 255, 255, 0.7)'
         }}>🔍</span>
       </div>
-      <label style={{ 
+      <div style={{ 
         display: 'flex', 
-        alignItems: 'center', 
-        gap: '0.5rem',
-        color: '#ffffff',
-        fontSize: '0.9rem',
-        fontWeight: '500',
-        cursor: 'pointer',
-        padding: '0.5rem 0.75rem',
-        borderRadius: '6px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        transition: 'all 0.2s'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-      }}
-      >
-        <input
-          type="checkbox"
-          checked={isPhotoOnly}
-          onChange={(e) => onPhotoOnlyChange(e.target.checked)}
-          style={{
-            width: '18px',
-            height: '18px',
-            cursor: 'pointer',
-            accentColor: '#ffffff'
-          }}
-        />
-        Photos
-      </label>
-      <label style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '0.5rem',
-        color: '#ffffff',
-        fontSize: '0.9rem',
-        fontWeight: '500',
-        cursor: 'pointer',
-        padding: '0.5rem 0.75rem',
-        borderRadius: '6px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        transition: 'all 0.2s'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-      }}
-      >
+        gap: '0.75rem',
+        alignItems: 'center',
+        flexShrink: 0
+      }}>
+        <label style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          color: '#ffffff',
+          fontSize: '0.9rem',
+          fontWeight: '500',
+          cursor: 'pointer',
+          padding: '0.5rem 0.75rem',
+          borderRadius: '6px',
+          background: 'rgba(255, 255, 255, 0.1)',
+          transition: 'all 0.2s',
+          whiteSpace: 'nowrap'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+        }}
+        >
+          <input
+            type="checkbox"
+            checked={isPhotoOnly}
+            onChange={(e) => onPhotoOnlyChange(e.target.checked)}
+            style={{
+              width: '18px',
+              height: '18px',
+              cursor: 'pointer',
+              accentColor: '#ffffff',
+              flexShrink: 0
+            }}
+          />
+          Photos
+        </label>
+        <label style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.5rem',
+          color: '#ffffff',
+          fontSize: '0.9rem',
+          fontWeight: '500',
+          cursor: 'pointer',
+          padding: '0.5rem 0.75rem',
+          borderRadius: '6px',
+          background: 'rgba(255, 255, 255, 0.1)',
+          transition: 'all 0.2s',
+          whiteSpace: 'nowrap'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+        }}
+        >
         <input
           type="checkbox"
           checked={isDocumentOnly}
@@ -123,7 +146,8 @@ const SearchBar = ({
           }}
         />
         Documents
-      </label>
+        </label>
+      </div>
       {searchTerm && (
         <button
           onClick={() => onSearchChange('')}

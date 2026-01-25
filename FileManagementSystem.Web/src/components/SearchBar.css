@@ -1,0 +1,17 @@
+/* Mobile responsive for search bar */
+@media (max-width: 768px) {
+  .search-bar-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .search-bar-container > div:first-child {
+    max-width: 100% !important;
+    margin-bottom: 0.75rem;
+  }
+
+  .search-bar-container > div:nth-child(2) {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

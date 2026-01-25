@@ -32,7 +32,8 @@ public class DeleteFolderCommandHandler : IRequestHandler<DeleteFolderCommand, D
         }
         
         // Prevent deletion of "Default" folder
-        // Check by name and by path - more robust check
+        // More reliable check: Normalize paths to handle different formats (relative/absolute, different separators)
+        // This ensures we catch the Default folder regardless of how the path is stored in the database
         var storageBasePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "FileManagementSystem",
@@ -40,10 +41,18 @@ public class DeleteFolderCommandHandler : IRequestHandler<DeleteFolderCommand, D
         );
         var expectedDefaultPath = Path.Combine(storageBasePath, "Default");
         
-        // Normalize paths for comparison
+        // Normalize paths for comparison - this handles:
+        // - Relative vs absolute paths (C:\... vs ..\...)
+        // - Different separators (C:\ vs C:/)
+        // - Trailing separators (C:\Default\ vs C:\Default)
         var normalizedFolderPath = Path.GetFullPath(folder.Path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var normalizedDefaultPath = Path.GetFullPath(expectedDefaultPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         
+        // Check multiple conditions to be thorough:
+        // 1. Name matches "Default" (case-insensitive)
+        // 2. Normalized paths match exactly
+        // 3. Path ends with "Default" (for nested scenarios)
+        // 4. Original path equals "Default" (for edge cases)
         var isDefaultFolder = folder.Name.Equals("Default", StringComparison.OrdinalIgnoreCase) ||
             normalizedFolderPath.Equals(normalizedDefaultPath, StringComparison.OrdinalIgnoreCase) ||
             normalizedFolderPath.EndsWith(Path.DirectorySeparatorChar + "Default", StringComparison.OrdinalIgnoreCase) ||

@@ -1,16 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fileApi, folderApi } from '../services/api';
 import FileList from './FileList';
 import FolderTree from './FolderTree';
 import SearchBar from './SearchBar';
 import FileUpload from './FileUpload';
+import './Dashboard.css';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>();
   const [isPhotoOnly, setIsPhotoOnly] = useState(false);
   const [isDocumentOnly, setIsDocumentOnly] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { data: filesData, isLoading: filesLoading } = useQuery({
     queryKey: ['files', searchTerm, selectedFolderId, isPhotoOnly],
@@ -55,12 +65,9 @@ const Dashboard = () => {
       backgroundColor: '#f8fafc',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
-      <header style={{ 
-        padding: '1.5rem 2rem', 
-        borderBottom: '1px solid #e2e8f0', 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-      }}>
+      <header className="dashboard-header">
+        <div className="dashboard-header-overlay"></div>
+        <div className="dashboard-header-content">
         <h1 style={{ 
           margin: '0 0 1rem 0', 
           fontSize: '1.75rem', 
@@ -78,17 +85,11 @@ const Dashboard = () => {
           isDocumentOnly={isDocumentOnly}
           onDocumentOnlyChange={setIsDocumentOnly}
         />
+        </div>
       </header>
       
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <aside style={{ 
-          width: '320px', 
-          borderRight: '1px solid #e2e8f0', 
-          overflow: 'auto', 
-          padding: '1.5rem',
-          backgroundColor: '#ffffff',
-          boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)'
-        }}>
+      <div className="dashboard-layout">
+        <aside className="dashboard-sidebar">
           <FolderTree
             folders={foldersData?.folders || []}
             onFolderSelect={setSelectedFolderId}
@@ -96,12 +97,7 @@ const Dashboard = () => {
           />
         </aside>
         
-        <main style={{ 
-          flex: 1, 
-          overflow: 'auto', 
-          padding: '2rem',
-          backgroundColor: '#f8fafc'
-        }}>
+        <main className="dashboard-main">
           <FileUpload destinationFolderId={selectedFolderId} />
           <FileList
             files={filteredFiles}
