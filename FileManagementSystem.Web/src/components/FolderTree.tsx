@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { folderApi } from '../services/api';
 import type { FolderDto } from '../types';
@@ -16,6 +16,15 @@ const FolderTree = ({ folders, onFolderSelect, selectedFolderId }: FolderTreePro
   const [showCreateInput, setShowCreateInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: async (name: string) => {
