@@ -8,6 +8,7 @@ import FileUpload from './FileUpload';
 import './Dashboard.css';
 
 // Memoized header component to prevent re-renders when only search results change
+// Only re-renders when filter props change, not when searchTerm changes
 const DashboardHeader = memo(({ 
   searchTerm, 
   onSearchChange, 
@@ -22,6 +23,15 @@ const DashboardHeader = memo(({
   onPhotoOnlyChange: (value: boolean) => void;
   isDocumentOnly: boolean;
   onDocumentOnlyChange: (value: boolean) => void;
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if filters change, ignore searchTerm changes
+  return (
+    prevProps.isPhotoOnly === nextProps.isPhotoOnly &&
+    prevProps.isDocumentOnly === nextProps.isDocumentOnly &&
+    prevProps.onSearchChange === nextProps.onSearchChange &&
+    prevProps.onPhotoOnlyChange === nextProps.onPhotoOnlyChange &&
+    prevProps.onDocumentOnlyChange === nextProps.onDocumentOnlyChange
+  );
 }) => (
   <header className="dashboard-header">
     <div className="dashboard-header-overlay"></div>
