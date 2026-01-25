@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fileApi, folderApi } from '../services/api';
 import FileList from './FileList';
@@ -9,6 +9,7 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>();
   const [isPhotoOnly, setIsPhotoOnly] = useState(false);
   const [isDocumentOnly, setIsDocumentOnly] = useState(false);
@@ -22,13 +23,25 @@ const Dashboard = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const { data: filesData, isLoading: filesLoading } = useQuery({
-    queryKey: ['files', searchTerm, selectedFolderId, isPhotoOnly],
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: filesData, isLoading: filesLoading, isFetching: filesFetching } = useQuery({
+    queryKey: ['files', debouncedSearchTerm, selectedFolderId, isPhotoOnly],
     queryFn: () => fileApi.getFiles({
-      searchTerm: searchTerm || undefined,
+      searchTerm: debouncedSearchTerm || undefined,
       folderId: selectedFolderId,
       isPhoto: isPhotoOnly || undefined,
     }),
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    keepPreviousData: true, // Keep previous data while fetching new data
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 
   // Filter documents on frontend (common document mime types)
@@ -103,7 +116,7 @@ const Dashboard = () => {
           <FileUpload destinationFolderId={selectedFolderId} />
           <FileList
             files={filteredFiles}
-            isLoading={filesLoading}
+            isLoading={filesLoading && !filesData} // Only show loading if we don't have previous data
             totalCount={isDocumentOnly ? filteredFiles.length : (filesData?.totalCount || 0)}
           />
         </main>
