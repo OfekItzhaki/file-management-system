@@ -63,7 +63,7 @@ public class DeleteFolderCommandHandler : IRequestHandler<DeleteFolderCommand, D
         {
             _logger.LogWarning("Attempt to delete Default folder blocked: {FolderId}, Name: {Name}, Path: {Path}", 
                 folder.Id, folder.Name, folder.Path);
-            return new DeleteFolderResult(false, "Cannot delete the Default folder. This folder is required by the system.");
+            return new DeleteFolderResult(false, "The Default folder cannot be deleted. It is a system folder that stores your files when no specific folder is selected.");
         }
         
         // Get subfolders
