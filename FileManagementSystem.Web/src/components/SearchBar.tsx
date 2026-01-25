@@ -241,17 +241,16 @@ const SearchBar = memo(({
         Documents
         </label>
       </div>
+      </div>
     </div>
   );
 }, (prevProps, nextProps) => {
   // Only re-render if filter props change, not when searchTerm changes
-  return (
-    prevProps.isPhotoOnly === nextProps.isPhotoOnly &&
+  return prevProps.isPhotoOnly === nextProps.isPhotoOnly &&
     prevProps.isDocumentOnly === nextProps.isDocumentOnly &&
     prevProps.onSearchChange === nextProps.onSearchChange &&
     prevProps.onPhotoOnlyChange === nextProps.onPhotoOnlyChange &&
-    prevProps.onDocumentOnlyChange === nextProps.onDocumentOnlyChange
-  );
+    prevProps.onDocumentOnlyChange === nextProps.onDocumentOnlyChange;
 });
 
 SearchBar.displayName = 'SearchBar';
