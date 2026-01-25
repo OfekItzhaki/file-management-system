@@ -20,7 +20,7 @@ public class StorageService : IStorageService
         _configuration = configuration;
         
         var configDir = _configuration["ThumbnailSettings:Directory"];
-        _thumbnailDirectory = !string.IsNullOrEmpty(configDir)
+        _thumbnailDirectory = !string.IsNullOrEmpty(configDir) 
             ? configDir
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
                 "FileManagementSystem", "Thumbnails");
@@ -28,7 +28,7 @@ public class StorageService : IStorageService
         Directory.CreateDirectory(_thumbnailDirectory);
     }
     
-    public async Task<string> SaveFileAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default)
+    public async Task<string> SaveFileAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default) 
     {
         var destinationDir = Path.GetDirectoryName(destinationPath);
         if (!string.IsNullOrEmpty(destinationDir))
