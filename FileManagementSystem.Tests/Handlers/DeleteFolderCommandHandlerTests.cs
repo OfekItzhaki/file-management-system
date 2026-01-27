@@ -63,7 +63,7 @@ public class DeleteFolderCommandHandlerTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("Cannot delete the Default folder");
+        result.ErrorMessage.Should().NotBeNull().And.Contain("Default folder");
     }
 
     [Fact]

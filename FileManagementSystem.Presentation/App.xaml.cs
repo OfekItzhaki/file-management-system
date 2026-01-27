@@ -13,6 +13,7 @@ using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Infrastructure.Data;
 using FileManagementSystem.Infrastructure.Repositories;
 using FileManagementSystem.Infrastructure.Services;
+using FileManagementSystem.Presentation.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace FileManagementSystem.Presentation;
@@ -94,6 +95,9 @@ public partial class App : System.Windows.Application
                     
                     // Presentation services
                     services.AddScoped<FileUploadService>();
+                    
+                    // Application services
+                    services.AddScoped<FileManagementSystem.Application.Services.FolderPathService>();
                     
                     // WPF
                     services.AddSingleton<MainWindow>();

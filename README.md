@@ -52,7 +52,7 @@ FileManagementSystem/
 ### Prerequisites
 
 - .NET 8.0 SDK or later
-- Node.js 18+ and npm
+- Node.js 20.9+ (or 22.12+) and npm (for Web project)
 - Visual Studio 2022 or VS Code
 
 ### Running the Application
@@ -138,11 +138,32 @@ The React app uses a Vite proxy to connect to the API. The proxy is configured i
 
 ## 🧪 Testing
 
-Run tests with:
+The project includes comprehensive unit tests using xUnit, Moq, and FluentAssertions.
+
+### Running Tests
 
 ```bash
+# Run all tests
 dotnet test
+
+# Run tests with detailed output
+dotnet test --verbosity normal
+
+# Run tests for a specific project
+dotnet test FileManagementSystem.Tests/FileManagementSystem.Tests.csproj
 ```
+
+### Test Coverage
+
+- **33 unit tests** covering all major command handlers:
+  - `UploadFileCommandHandlerTests` (6 tests)
+  - `DeleteFileCommandHandlerTests` (4 tests)
+  - `CreateFolderCommandHandlerTests` (6 tests)
+  - `RenameFileCommandHandlerTests` (6 tests)
+  - `DeleteFolderCommandHandlerTests` (6 tests)
+  - `RenameFolderCommandHandlerTests` (5 tests)
+
+Tests cover both success scenarios and error cases, including validation, path traversal protection, and edge cases.
 
 ## 📝 Project Structure
 
@@ -157,32 +178,51 @@ dotnet test
 - `Handlers/`: Command and query handlers
 - `Validators/`: FluentValidation validators
 - `Behaviors/`: MediatR pipeline behaviors (logging, validation, authorization)
+- `Services/`: Application services (UploadDestinationResolver, FolderPathService)
+- `Utilities/`: Shared utility classes (MimeTypeHelper)
+- `Interfaces/`: Application layer interfaces
+- `Mappings/`: Entity to DTO mapping extensions
 
 ### Infrastructure Layer
 - `Data/`: AppDbContext and EF Core configuration
 - `Repositories/`: Repository implementations
-- `Services/`: MetadataService, StorageService, AuthenticationService, etc.
+- `Services/`: Infrastructure services (MetadataService, StorageService, AuthenticationService, etc.)
 
 ### API Layer
 - `Controllers/`: REST API endpoints (FilesController, FoldersController)
+- `Middleware/`: Global exception handling, Windsor scope management
+- `Installers/`: Castle Windsor dependency injection configuration
+- `Services/`: API-specific services (FilePathResolver)
 
 ### Web Layer (React)
 - `src/components/`: React components (Dashboard, FileList, FolderTree, etc.)
 - `src/services/`: API client and services
 - `src/types/`: TypeScript type definitions
 
+### Tests Layer
+- `Handlers/`: Unit tests for command and query handlers (33 tests covering all major operations)
+
 ## ✅ Best Practices Implemented
 
-- ✅ **Clean Architecture**: Clear separation of concerns
-- ✅ **CQRS**: Commands and Queries separation with MediatR
+- ✅ **Clean Architecture**: Clear separation of concerns with well-defined layers
+- ✅ **CQRS**: Commands and Queries separation using MediatR
+- ✅ **DRY Principle**: Shared utilities (MimeTypeHelper) and services (FolderPathService) to avoid code duplication
+- ✅ **Single Responsibility**: Handlers focused on orchestration, business logic in services
 - ✅ **Async/Await**: All I/O operations are async
-- ✅ **Dependency Injection**: Microsoft.Extensions.DependencyInjection throughout
+- ✅ **Dependency Injection**: Microsoft.Extensions.DependencyInjection and Castle Windsor
 - ✅ **Validation**: FluentValidation on all commands
 - ✅ **Logging**: Serilog with structured logging
 - ✅ **Error Handling**: Custom exceptions and try-catch with user-friendly messages
 - ✅ **Security**: Path sanitization, file size/type validation, SHA256 hashing
 - ✅ **Performance**: Background tasks, EF AsNoTracking for reads, React Query caching
 - ✅ **Type Safety**: TypeScript throughout the frontend
+- ✅ **Unit Testing**: Comprehensive test coverage with xUnit, Moq, and FluentAssertions
+- ✅ **Modular Design**: Services and utilities extracted for reusability and maintainability
+
+## 📚 Additional Documentation
+
+- Architecture and migration plans are available in the `instructions/` folder (not committed to repository)
+- Database migration scripts are located in `instructions/` folder
 
 ## 📄 License
 
@@ -197,3 +237,12 @@ Feel free to extend this application with additional features:
 - Image editing capabilities
 - Export functionality
 - Plugin system
+
+## 🏗️ Code Organization
+
+The codebase follows Clean Architecture principles with:
+- **Utilities**: Shared helper classes (e.g., `MimeTypeHelper`)
+- **Services**: Business logic services (e.g., `FolderPathService`, `UploadDestinationResolver`)
+- **Handlers**: Thin orchestration layer delegating to services
+- **Repositories**: Data access abstraction
+- **Clear separation**: Each layer has well-defined responsibilities

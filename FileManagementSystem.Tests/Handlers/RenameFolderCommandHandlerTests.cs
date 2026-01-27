@@ -4,6 +4,7 @@ using Xunit;
 using FileManagementSystem.Application.Handlers;
 using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Interfaces;
+using FileManagementSystem.Application.Services;
 using FileManagementSystem.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -12,16 +13,19 @@ namespace FileManagementSystem.Tests.Handlers;
 public class RenameFolderCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<FolderPathService> _folderPathServiceMock;
     private readonly Mock<ILogger<RenameFolderCommandHandler>> _loggerMock;
     private readonly RenameFolderCommandHandler _handler;
 
     public RenameFolderCommandHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _folderPathServiceMock = new Mock<FolderPathService>(_unitOfWorkMock.Object);
         _loggerMock = new Mock<ILogger<RenameFolderCommandHandler>>();
         
         _handler = new RenameFolderCommandHandler(
             _unitOfWorkMock.Object,
+            _folderPathServiceMock.Object,
             _loggerMock.Object);
     }
 

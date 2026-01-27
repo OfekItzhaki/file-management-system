@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Interfaces;
 using FileManagementSystem.Application.Services;
+using FileManagementSystem.Application.Utilities;
 using FileManagementSystem.Domain.Entities;
 using FileManagementSystem.Domain.Exceptions;
 
@@ -106,7 +107,7 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
             HashHex = hashHex,
             Size = compressedFileInfo.Length, // Store compressed size (actual disk usage)
             IsCompressed = true, // Mark as compressed
-            MimeType = GetMimeType(originalFileName), // Use original filename for MIME type
+            MimeType = MimeTypeHelper.GetMimeType(originalFileName), // Use original filename for MIME type
             IsPhoto = isPhoto,
             FolderId = targetFolder.Id,
             CreatedDate = DateTime.UtcNow,
@@ -126,20 +127,4 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
         return new UploadFileResult(fileItem.Id, false, destinationPath);
     }
     
-    private static string GetMimeType(string filePath)
-    {
-        var extension = Path.GetExtension(filePath).ToLowerInvariant();
-        return extension switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".bmp" => "image/bmp",
-            ".pdf" => "application/pdf",
-            ".txt" => "text/plain",
-            ".doc" => "application/msword",
-            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            _ => "application/octet-stream"
-        };
-    }
 }

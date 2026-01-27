@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Interfaces;
 using FileManagementSystem.Application.DTOs;
+using FileManagementSystem.Application.Utilities;
 using FileManagementSystem.Domain.Entities;
 using FileManagementSystem.Domain.Exceptions;
 
@@ -129,7 +130,7 @@ public class ScanDirectoryCommandHandler : IRequestHandler<ScanDirectoryCommand,
                         Hash = hash,
                         HashHex = hashHex,
                         Size = fileInfo.Length,
-                        MimeType = GetMimeType(normalizedPath),
+                        MimeType = MimeTypeHelper.GetMimeType(normalizedPath),
                         IsPhoto = isPhoto,
                         FolderId = folder?.Id,
                         CreatedDate = DateTime.UtcNow,
@@ -223,20 +224,4 @@ public class ScanDirectoryCommandHandler : IRequestHandler<ScanDirectoryCommand,
         }
     }
     
-    private static string GetMimeType(string filePath)
-    {
-        var extension = Path.GetExtension(filePath).ToLowerInvariant();
-        return extension switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".bmp" => "image/bmp",
-            ".pdf" => "application/pdf",
-            ".txt" => "text/plain",
-            ".doc" => "application/msword",
-            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            _ => "application/octet-stream"
-        };
-    }
 }

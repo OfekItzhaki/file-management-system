@@ -144,3 +144,6 @@ mono_crash.*
 
 # Documentation (not committed)
 CODE_GUIDE.md
+
+# Instructions and migration scripts (not committed)
+instructions/

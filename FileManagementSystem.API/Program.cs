@@ -132,6 +132,7 @@ builder.Services.AddMemoryCache();
 // Application services
 builder.Services.AddScoped<FileManagementSystem.API.Services.FilePathResolver>();
 builder.Services.AddScoped<FileManagementSystem.Application.Services.UploadDestinationResolver>();
+builder.Services.AddScoped<FileManagementSystem.Application.Services.FolderPathService>();
 
 var app = builder.Build();
 
