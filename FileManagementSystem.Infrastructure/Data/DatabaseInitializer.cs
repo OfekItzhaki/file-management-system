@@ -79,13 +79,14 @@ public class DatabaseInitializer
     private async Task EnsureIsCompressedColumnAsync(DbConnection connection)
     {
         var checkCommand = connection.CreateCommand();
-        checkCommand.CommandText = "SELECT COUNT(*) FROM pragma_table_info('FileItems') WHERE name='IsCompressed'";
+        // PostgreSQL uses information_schema.columns for meta-data
+        checkCommand.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'FileItems' AND column_name = 'iscompressed'";
         var exists = Convert.ToInt32(await checkCommand.ExecuteScalarAsync()) > 0;
 
         if (!exists)
         {
             var addCommand = connection.CreateCommand();
-            addCommand.CommandText = "ALTER TABLE FileItems ADD COLUMN IsCompressed INTEGER NOT NULL DEFAULT 1";
+            addCommand.CommandText = "ALTER TABLE \"FileItems\" ADD COLUMN \"IsCompressed\" BOOLEAN NOT NULL DEFAULT TRUE";
             await addCommand.ExecuteNonQueryAsync();
             _logger.LogInformation("Added IsCompressed column to FileItems table");
         }
@@ -94,13 +95,13 @@ public class DatabaseInitializer
     private async Task EnsureFileNameColumnAsync(DbConnection connection)
     {
         var checkCommand = connection.CreateCommand();
-        checkCommand.CommandText = "SELECT COUNT(*) FROM pragma_table_info('FileItems') WHERE name='FileName'";
+        checkCommand.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'FileItems' AND column_name = 'filename'";
         var exists = Convert.ToInt32(await checkCommand.ExecuteScalarAsync()) > 0;
 
         if (!exists)
         {
             var addCommand = connection.CreateCommand();
-            addCommand.CommandText = "ALTER TABLE FileItems ADD COLUMN FileName TEXT";
+            addCommand.CommandText = "ALTER TABLE \"FileItems\" ADD COLUMN \"FileName\" TEXT";
             await addCommand.ExecuteNonQueryAsync();
             _logger.LogInformation("Added FileName column to FileItems table");
         }
