@@ -1,0 +1,39 @@
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=horizon_user
+      - POSTGRES_PASSWORD=horizon_password
+      - POSTGRES_DB=horizon_fms
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  api-service:
+    build:
+      context: .
+      dockerfile: FileManagementSystem.API/Dockerfile
+    ports:
+      - "5295:5295"
+    depends_on:
+      - database
+    volumes:
+      - ./logs:/app/logs
+      - api-data:/app/data
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=database;Port=5432;Database=horizon_fms;Username=horizon_user;Password=horizon_password;
+
+  web-service:
+    build:
+      context: ./FileManagementSystem.Web
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-service
+
+volumes:
+  api-data:
+  postgres-data:
