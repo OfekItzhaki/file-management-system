@@ -43,42 +43,16 @@ public class FoldersController : ControllerBase
         [FromBody] CreateFolderRequest request,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("CreateFolder endpoint called with Name: {Name}, ParentFolderId: {ParentFolderId}", 
-            request?.Name, request?.ParentFolderId);
-        
-        if (request == null)
-        {
-            _logger.LogWarning("CreateFolder called with null request");
-            return BadRequest("Request body is required");
-        }
-        
-        if (string.IsNullOrWhiteSpace(request.Name))
+        if (request == null || string.IsNullOrWhiteSpace(request.Name))
         {
             return BadRequest("Folder name is required");
         }
-
-        try
-        {
-            var command = new CreateFolderCommand(request.Name, request.ParentFolderId);
-            var result = await _mediator.Send(command, cancellationToken);
-            _logger.LogInformation("Folder created successfully: {FolderId}", result.FolderId);
-            return Ok(result);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Invalid argument for folder creation");
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Operation error during folder creation");
-            return Conflict(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating folder");
-            return StatusCode(500, "An error occurred while creating the folder");
-        }
+        
+        var command = new CreateFolderCommand(request.Name, request.ParentFolderId);
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        _logger.LogInformation("Folder created successfully: {FolderId}", result.FolderId);
+        return Ok(result);
     }
 
     /// <summary>
@@ -95,23 +69,15 @@ public class FoldersController : ControllerBase
             return BadRequest("New folder name is required");
         }
 
-        try
+        var command = new RenameFolderCommand(id, request.NewName);
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        if (!result.Success)
         {
-            var command = new RenameFolderCommand(id, request.NewName);
-            var result = await _mediator.Send(command, cancellationToken);
-            
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            
-            return Ok(result);
+            return BadRequest(result.ErrorMessage);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error renaming folder {FolderId}", id);
-            return StatusCode(500, "An error occurred while renaming the folder");
-        }
+        
+        return Ok(result);
     }
 
     /// <summary>
@@ -123,23 +89,15 @@ public class FoldersController : ControllerBase
         [FromQuery] bool deleteFiles = false,
         CancellationToken cancellationToken = default)
     {
-        try
+        var command = new DeleteFolderCommand(id, deleteFiles);
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        if (!result.Success)
         {
-            var command = new DeleteFolderCommand(id, deleteFiles);
-            var result = await _mediator.Send(command, cancellationToken);
-            
-            if (!result.Success)
-            {
-                return BadRequest(result.ErrorMessage);
-            }
-            
-            return Ok(result);
+            return BadRequest(result.ErrorMessage);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting folder {FolderId}", id);
-            return StatusCode(500, "An error occurred while deleting the folder");
-        }
+        
+        return Ok(result);
     }
 }
 

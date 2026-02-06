@@ -12,6 +12,7 @@ using MediatR;
 using FileManagementSystem.Application.Interfaces;
 using FileManagementSystem.Application.Commands;
 using FileManagementSystem.Application.Services;
+using FileManagementSystem.API.Middleware;
 using FileManagementSystem.Infrastructure.Data;
 using FileManagementSystem.Infrastructure.Repositories;
 using FileManagementSystem.Infrastructure.Services;
@@ -90,6 +91,11 @@ builder.Services.AddScoped<IStorageService>(sp =>
     var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
     return windsorContainer.Resolve<IStorageService>();
 });
+builder.Services.AddScoped<IFilePathResolver>(sp => 
+{
+    var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
+    return windsorContainer.Resolve<IFilePathResolver>();
+});
 builder.Services.AddSingleton<IAuthenticationService>(sp => 
 {
     var windsorContainer = sp.GetRequiredService<IWindsorContainer>();
@@ -122,7 +128,7 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Data Source=filemanager.db";
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString)
+    options.UseNpgsql(connectionString)
         .EnableSensitiveDataLogging(false)
         .EnableServiceProviderCaching());
 
@@ -130,7 +136,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddMemoryCache();
 
 // Application services
-builder.Services.AddScoped<FileManagementSystem.API.Services.FilePathResolver>();
 builder.Services.AddScoped<FileManagementSystem.Application.Services.UploadDestinationResolver>();
 builder.Services.AddScoped<FileManagementSystem.Application.Services.FolderPathService>();
 
@@ -152,6 +157,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowReactApp");
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

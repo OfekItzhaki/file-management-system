@@ -15,13 +15,11 @@ public class FilesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<FilesController> _logger;
-    private readonly FilePathResolver _filePathResolver;
 
-    public FilesController(IMediator mediator, ILogger<FilesController> logger, FilePathResolver filePathResolver)
+    public FilesController(IMediator mediator, ILogger<FilesController> logger)
     {
         _mediator = mediator;
         _logger = logger;
-        _filePathResolver = filePathResolver;
     }
 
     /// <summary>
@@ -96,55 +94,14 @@ public class FilesController : ControllerBase
     [HttpGet("{id}/download")]
     public async Task<ActionResult> DownloadFile(Guid id, CancellationToken cancellationToken = default)
     {
-        var query = new GetFileQuery(id);
-        var file = await _mediator.Send(query, cancellationToken);
+        var result = await _mediator.Send(new GetFileDownloadQuery(id), cancellationToken);
         
-        if (file == null)
+        if (result == null)
         {
-            _logger.LogWarning("Download attempt for non-existent file ID: {FileId}", id);
-            return NotFound();
-        }
-
-        try
-        {
-            var storageService = HttpContext.RequestServices.GetRequiredService<FileManagementSystem.Application.Interfaces.IStorageService>();
-            
-            var storedPath = file.Path;
-            _logger.LogInformation("Download request: FileId={FileId}, StoredPath={StoredPath}, IsCompressed={IsCompressed}", 
-                id, storedPath, file.IsCompressed);
-            
-            var actualFilePath = _filePathResolver.ResolveFilePath(storedPath, file.IsCompressed);
-
-            if (actualFilePath == null)
-            {
-                return NotFound("File not found on server. Please check the API logs for details. The file may need to be re-uploaded.");
-            }
-
-            // Read file (automatically decompresses if needed)
-            var isActuallyCompressed = actualFilePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
-            var fileData = await storageService.ReadFileAsync(actualFilePath, isActuallyCompressed, cancellationToken);
-            
-            // Use the original filename from database (FileName property) if available
-            // This ensures the downloaded file has the correct original name the user uploaded
-            var downloadFileName = !string.IsNullOrEmpty(file.FileName) 
-                ? file.FileName 
-                : fileData.OriginalFileName;
-            
-            _logger.LogDebug("File read for download: ID={FileId}, DatabaseFileName={DatabaseFileName}, ExtractedFileName={ExtractedFileName}, WasCompressed={WasCompressed}, Size={Size}", 
-                id, file.FileName, fileData.OriginalFileName, fileData.WasCompressed, fileData.Content.Length);
-            
-            return File(fileData.Content, file.MimeType, downloadFileName);
-        }
-        catch (FileNotFoundException ex)
-        {
-            _logger.LogError(ex, "File not found for download: ID={FileId}, Path={FilePath}", id, file.Path);
             return NotFound("File not found on server.");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error reading file for download: ID={FileId}, Path={FilePath}", id, file.Path);
-            return StatusCode(500, "Error reading file");
-        }
+
+        return File(result.Content, result.MimeType, result.FileName);
     }
 
     /// <summary>
@@ -224,22 +181,13 @@ public class FilesController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a file
+    /// Delete a file by ID
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteFile(
-        Guid id,
-        [FromQuery] bool moveToRecycleBin = true,
-        CancellationToken cancellationToken = default)
+    public async Task<ActionResult> DeleteFile(Guid id, [FromQuery] bool moveToRecycleBin = true, CancellationToken cancellationToken = default)
     {
         var command = new DeleteFileCommand(id, moveToRecycleBin);
-        var result = await _mediator.Send(command, cancellationToken);
-        
-        if (!result.Success)
-        {
-            return NotFound();
-        }
-        
+        await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
@@ -247,19 +195,16 @@ public class FilesController : ControllerBase
     /// Rename a file
     /// </summary>
     [HttpPut("{id}/rename")]
-    public async Task<ActionResult<RenameFileResult>> RenameFile(
-        Guid id,
-        [FromBody] RenameFileRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<ActionResult> RenameFile(Guid id, [FromBody] RenameFileRequest request, CancellationToken cancellationToken = default)
     {
         var command = new RenameFileCommand(id, request.NewName);
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         if (!result.Success)
         {
-            return NotFound();
+            return BadRequest(result.ErrorMessage);
         }
-        
+
         return Ok(result);
     }
 
