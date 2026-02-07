@@ -44,6 +44,17 @@ This document defines the "Golden Rules" and the architectural standards. It is 
 - **Mobile Integration**: Use a singleton socket instance to manage persistent connections across screens.
 - **Fallback**: Always ensure REST APIs are available as fallback for critical operations.
 
+### 8. Observability & Health Monitoring
+- **Structured Logging**: Use **Seq** for visual log search and filtering
+  - All logs must be structured (JSON format with contextual properties)
+  - Query examples: `Level == "Error" && UserId == "123"`, `@Timestamp > DateTime('2026-02-07')`
+  - Enables rapid debugging and production issue diagnosis
+- **Health Checks**: Implement `/health` endpoint for orchestration and monitoring
+  - Check: Database connectivity, Redis availability, Storage accessibility
+  - Return: 200 (Healthy) or 503 (Unhealthy) with diagnostic details
+  - Used by: Docker, Kubernetes, load balancers for automated recovery
+- **Metrics**: Track request counts, error rates, and response times for performance monitoring
+
 ## 🌿 Git & Collaboration
 - **Branch Naming**: 
   - `feat/feature-name` (new work)
@@ -186,8 +197,35 @@ This document defines the "Golden Rules" and the architectural standards. It is 
 - **Commit History**: Never rewrite public history (no `git rebase -i` on pushed commits)
 
 ## 🛡️ Security & Performance
+
+### Security Headers
+Implement these HTTP response headers to protect users from common web attacks:
+
+- **CSP (Content-Security-Policy)**: Controls which resources (scripts, styles, images) can load on your page
+  - Prevents: XSS (Cross-Site Scripting) attacks where hackers inject malicious JavaScript
+  - Example: `default-src 'self'; script-src 'self' 'unsafe-inline';`
+  - Impact: Blocks external malicious scripts from executing
+
+- **X-Frame-Options: DENY**: Prevents your site from being embedded in an `<iframe>`
+  - Prevents: Clickjacking attacks where hackers overlay invisible iframes to trick users
+  - Impact: Stops attackers from embedding your login page on malicious sites
+
+- **X-Content-Type-Options: nosniff**: Stops browsers from "guessing" file types (MIME-sniffing)
+  - Prevents: MIME-sniffing attacks where browsers execute disguised files (e.g., `.txt` as JavaScript)
+  - Impact: Forces browsers to respect the declared `Content-Type` header
+
+- **Referrer-Policy: no-referrer**: Controls what information is sent in the `Referer` header
+  - Prevents: Leaking sensitive URLs (e.g., password reset links with tokens) to third-party sites
+  - Impact: Protects user privacy and prevents token exposure
+
+- **Rate Limiting**: Implement IP-based rate limiting (e.g., 100 requests/minute)
+  - Prevents: Brute-force attacks, API abuse, DDoS attempts
+  - Impact: Ensures service availability and fair resource usage
+
+### Secrets & Configuration
 - **Secrets**: Never commit `.env` files. Use `.env.example` as a template.
 - **CORS**: Strictly define allowed origins; never use `*` in production.
+- **API Keys**: Store in environment variables or secret management services (Azure Key Vault, AWS Secrets Manager)
 
 ## 📜 Naming Conventions & Style
 - **NestJS / TypeScript**:
@@ -213,11 +251,16 @@ This document defines the "Golden Rules" and the architectural standards. It is 
 - **ADR 001: Database**: Chose Postgres over SQLite to ensure production/development parity and support complex indexing.
 - **ADR 002: Error Handling**: Chose Global Middleware + ProblemDetails to provide a consistent mobile/web-friendly error format.
 - **ADR 003: Background Jobs**: Chose BullMQ for task offloading to ensure API responsiveness and job reliability.
+- **ADR 004: Observability**: Chose Seq for structured logging over ELK Stack for simplicity and superior developer experience.
+- **ADR 005: Caching**: Chose Redis for distributed caching to support horizontal scaling and session management.
+- **ADR 006: API Versioning**: Chose URI-based versioning (`/api/v1/`) over header-based for simplicity and API discoverability.
 
 ## 🤖 Future Agent Instructions
 1. **Read the Blueprint**: Always check this file before implementing new features.
 2. **Modularize First**: If a file exceeds 200 lines, search for extraction points before adding more code.
 3. **Audit the "Chain"**: When adding a field to the DB, update the Entity -> DTO -> Handler/Query -> API -> Generated Client.
+4. **Guardian Guardrails**: This architecture serves as the foundation for the **Guardian Guardrails** product—a tool that enforces these standards automatically via AI-powered code audits and mentorship.
 
 ---
 *Created during the Architectural Overhaul of February 2026.*
+*This document powers the Guardian Guardrails enforcement engine.*
