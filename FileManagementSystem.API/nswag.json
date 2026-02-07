@@ -2,11 +2,36 @@
   "runtime": "Net80",
   "defaultVariables": null,
   "documentGenerator": {
-    "fromDocument": {
-      "json": "swagger.json",
-      "url": null,
-      "output": null,
-      "newLineBehavior": "Auto"
+    "aspNetCoreToOpenApi": {
+      "project": "FileManagementSystem.API.csproj",
+      "msBuildProjectParameters": null,
+      "configuration": null,
+      "runtime": null,
+      "targetFramework": null,
+      "noBuild": true,
+      "msBuildOutputPath": null,
+      "verbose": true,
+      "workingDirectory": null,
+      "requireParametersWithoutDefault": false,
+      "apiGroupNames": null,
+      "defaultPropertyNameHandling": "Default",
+      "defaultReferenceTypeNullHandling": "Null",
+      "defaultDictionaryValueReferenceTypeNullHandling": "Null",
+      "defaultResponseReferenceTypeNullHandling": "Null",
+      "generateOriginalParameterNames": false,
+      "schemaType": "OpenApi3",
+      "output": "swagger.json",
+      "outputType": "Swagger2",
+      "newLineBehavior": "Auto",
+      "assemblyPaths": [],
+      "assemblyConfig": null,
+      "referencePaths": [],
+      "useDocumentProvider": true,
+      "documentName": "v1",
+      "serviceHost": null,
+      "serviceSchemes": null,
+      "serviceBasePath": null,
+      "postProcess": null
     }
   },
   "codeGenerators": {

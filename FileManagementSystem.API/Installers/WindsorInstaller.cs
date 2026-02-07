@@ -57,9 +57,12 @@ public class WindsorInstaller : IWindsorInstaller
                 .UsingFactoryMethod(() =>
                 {
                     var connectionString = _configuration.GetConnectionString("DefaultConnection")
-                        ?? "Data Source=filemanager.db";
+                        ?? "Host=localhost;Database=filemanagement;Username=postgres;Password=your_password";
                     var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-                    optionsBuilder.UseSqlite(connectionString)
+                    
+                    // Use PostgreSQL to match Program.cs
+                    // In tests, this will be overridden by the WebApplicationFactory's ConfigureServices
+                    optionsBuilder.UseNpgsql(connectionString)
                         .EnableSensitiveDataLogging(false)
                         .EnableServiceProviderCaching();
                     return new AppDbContext(optionsBuilder.Options);

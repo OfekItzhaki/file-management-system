@@ -257,3 +257,5 @@ finally
     container?.Dispose();
     Log.CloseAndFlush();
 }
+
+public partial class Program { }

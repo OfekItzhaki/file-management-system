@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fileApi, folderApi } from '../services/api';
 import FileList from './FileList';
@@ -9,13 +9,13 @@ import './Dashboard.css';
 
 // Memoized header component to prevent re-renders when only search results change
 // Only re-renders when filter props change, not when searchTerm changes
-const DashboardHeader = memo(({ 
-  searchTerm, 
-  onSearchChange, 
-  isPhotoOnly, 
+const DashboardHeader = memo(({
+  searchTerm,
+  onSearchChange,
+  isPhotoOnly,
   onPhotoOnlyChange,
   isDocumentOnly,
-  onDocumentOnlyChange 
+  onDocumentOnlyChange
 }: {
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -27,9 +27,9 @@ const DashboardHeader = memo(({
   <header className="dashboard-header">
     <div className="dashboard-header-overlay"></div>
     <div className="dashboard-header-content">
-      <h1 style={{ 
-        margin: '0 0 1rem 0', 
-        fontSize: '2rem', 
+      <h1 style={{
+        margin: '0 0 1rem 0',
+        fontSize: '2rem',
         fontWeight: '800',
         color: '#ffffff',
         letterSpacing: '-0.03em',
@@ -71,15 +71,6 @@ const Dashboard = () => {
   const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>();
   const [isPhotoOnly, setIsPhotoOnly] = useState(false);
   const [isDocumentOnly, setIsDocumentOnly] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Debounce search term to avoid too many API calls
   useEffect(() => {
@@ -107,7 +98,7 @@ const Dashboard = () => {
     setSelectedFolderId(folderId);
   }, []);
 
-  const { data: filesData, isLoading: filesLoading, isFetching: filesFetching } = useQuery({
+  const { data: filesData, isLoading: filesLoading } = useQuery({
     queryKey: ['files', debouncedSearchTerm, selectedFolderId, isPhotoOnly],
     queryFn: () => fileApi.getFiles({
       searchTerm: debouncedSearchTerm || undefined,
@@ -115,9 +106,8 @@ const Dashboard = () => {
       isPhoto: isPhotoOnly || undefined,
     }),
     staleTime: 30000, // Consider data fresh for 30 seconds
-    keepPreviousData: true, // Keep previous data while fetching new data
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
-    placeholderData: (previousData) => previousData, // Keep previous data during transitions
+    placeholderData: (previousData) => previousData, // Keep previous data during transitions (replaces keepPreviousData in v5)
   });
 
   // Filter documents on frontend (common document mime types)
@@ -132,9 +122,9 @@ const Dashboard = () => {
     'application/vnd.oasis.opendocument',
   ];
 
-  const filteredFiles = filesData?.files.filter(file => {
+  const filteredFiles = filesData?.files?.filter((file: any) => {
     if (isDocumentOnly) {
-      return documentMimeTypes.some(mimeType => 
+      return documentMimeTypes.some(mimeType =>
         file.mimeType.toLowerCase().startsWith(mimeType.toLowerCase())
       );
     }
@@ -143,13 +133,13 @@ const Dashboard = () => {
 
   const { data: foldersData } = useQuery({
     queryKey: ['folders'],
-    queryFn: folderApi.getFolders,
+    queryFn: () => folderApi.getFolders(),
   });
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      height: '100vh', 
+    <div style={{
+      display: 'flex',
+      height: '100vh',
       flexDirection: 'column',
       backgroundColor: '#f8fafc',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
@@ -162,7 +152,7 @@ const Dashboard = () => {
         isDocumentOnly={isDocumentOnly}
         onDocumentOnlyChange={handleDocumentOnlyChange}
       />
-      
+
       <div className="dashboard-layout">
         <aside className="dashboard-sidebar">
           <FolderTree
@@ -171,7 +161,7 @@ const Dashboard = () => {
             selectedFolderId={selectedFolderId}
           />
         </aside>
-        
+
         <main className="dashboard-main">
           <FileUpload destinationFolderId={selectedFolderId} />
           <FileList

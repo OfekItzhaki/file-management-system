@@ -45,7 +45,7 @@
     <ProjectReference Include="..\FileManagementSystem.Domain\FileManagementSystem.Domain.csproj" />
   </ItemGroup>
 
-  <Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'Debug' ">
+  <Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" false ">
     <Exec ConsoleToMSBuild="true" ContinueOnError="true" Command="$(NSwagExe_Net80) run nswag.json">
       <Output TaskParameter="ExitCode" PropertyName="NSwagExitCode" />
       <Output TaskParameter="ConsoleOutput" PropertyName="NSwagOutput" />
