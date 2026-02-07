@@ -236,13 +236,29 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Ensure database is created and initialized
+// Ensure database is created and initialized with retries
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<FileManagementSystem.Infrastructure.Data.DatabaseInitializer>>();
     var initializer = new FileManagementSystem.Infrastructure.Data.DatabaseInitializer(dbContext, logger);
-    await initializer.InitializeAsync();
+    
+    int retryCount = 0;
+    while (retryCount < 5)
+    {
+        try 
+        {
+            await initializer.InitializeAsync();
+            break;
+        }
+        catch (Exception ex)
+        {
+            retryCount++;
+            logger.LogWarning(ex, "Failed to initialize database (Attempt {RetryCount}/5). Retrying in 5 seconds...", retryCount);
+            await Task.Delay(5000);
+            if (retryCount >= 5) throw;
+        }
+    }
 }
 
 Log.Logger.Information("File Management System API starting...");
