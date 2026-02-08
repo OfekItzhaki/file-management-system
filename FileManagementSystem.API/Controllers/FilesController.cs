@@ -220,5 +220,27 @@ public class FilesController : ControllerBase
     }
 }
 
+    /// <summary>
+    /// Set tags for a file (overwrites existing tags)
+    /// </summary>
+    [HttpPut("{id}/tags")]
+    public async Task<ActionResult> SetTags(
+        Guid id,
+        [FromBody] SetTagsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new SetTagsCommand(id, request.Tags);
+        var success = await _mediator.Send(command, cancellationToken);
+        
+        if (!success)
+        {
+            return NotFound();
+        }
+        
+        return NoContent();
+    }
+}
+
 public record RenameFileRequest(string NewName);
 public record AddTagsRequest(List<string> Tags);
+public record SetTagsRequest(List<string> Tags);

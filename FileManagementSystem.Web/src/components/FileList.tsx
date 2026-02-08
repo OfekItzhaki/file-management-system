@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { Edit2, ExternalLink, Trash2 } from 'lucide-react';
 import { fileApi } from '../services/api';
 import type { FileItemDto } from '../types';
+import TagEditor from './TagEditor';
 import './FileList.css';
 
 interface FileListProps {
@@ -30,36 +32,68 @@ const FileTableRow = memo(({
   index,
   onDelete,
   onOpen,
+  onEditTags,
   isDeleting
 }: {
   file: FileItemDto;
   index: number;
   onDelete: (id: string, name: string) => void;
   onOpen: (file: FileItemDto) => void;
+  onEditTags: (file: FileItemDto) => void;
   isDeleting: boolean;
 }) => {
   const fileName = file.fileName || getFileName(file.path ?? '');
 
   return (
     <tr className={`file-row ${index % 2 === 0 ? 'even' : 'odd'}`}>
-      <td className="file-cell" title={fileName}>{fileName}</td>
+      <td className="file-cell" title={fileName}>
+        <div className="flex items-center gap-2">
+          {fileName}
+        </div>
+      </td>
       <td className="file-cell secondary align-right">{formatSize(file.size ?? 0)}</td>
       <td className="file-cell secondary" title={file.mimeType ?? undefined}>{file.mimeType || '-'}</td>
-      <td className="file-cell secondary" title={file.tags?.join(', ') || ''}>
-        {file.tags && file.tags.length > 0 ? file.tags.join(', ') : '-'}
+      <td className="file-cell secondary">
+        <div className="flex items-center gap-2 group">
+          <div className="flex flex-wrap gap-1 max-w-[200px]">
+            {file.tags && file.tags.length > 0 ? (
+              file.tags.map(tag => (
+                <span key={tag} className="inline-block px-1.5 py-0.5 rounded text-xs bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-secondary)]">
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-[var(--text-tertiary)] italic text-xs">No tags</span>
+            )}
+          </div>
+          <button
+            onClick={() => onEditTags(file)}
+            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--surface-secondary)] text-[var(--text-secondary)] transition-all"
+            title="Edit tags"
+          >
+            <Edit2 size={14} />
+          </button>
+        </div>
       </td>
       <td className="file-cell secondary">
         {file.createdDate ? new Date(file.createdDate).toLocaleDateString() : '-'}
       </td>
       <td className="file-cell">
-        <div className="action-buttons">
-          <button className="btn-open" onClick={() => onOpen(file)}>Open</button>
+        <div className="action-buttons flex gap-2 justify-end">
           <button
-            className="btn-delete"
+            className="p-1.5 rounded hover:bg-[var(--surface-secondary)] text-[var(--accent-primary)] transition-colors"
+            onClick={() => onOpen(file)}
+            title="Open/Download"
+          >
+            <ExternalLink size={16} />
+          </button>
+          <button
+            className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors disabled:opacity-50"
             onClick={() => onDelete(file.id!, fileName)}
             disabled={isDeleting}
+            title="Delete"
           >
-            {isDeleting ? '...' : 'Delete'}
+            <Trash2 size={16} />
           </button>
         </div>
       </td>
@@ -69,6 +103,7 @@ const FileTableRow = memo(({
 
 const FileList = memo(({ files, isLoading, totalCount }: FileListProps) => {
   const queryClient = useQueryClient();
+  const [editingFile, setEditingFile] = useState<FileItemDto | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -99,39 +134,52 @@ const FileList = memo(({ files, isLoading, totalCount }: FileListProps) => {
     }
   }, []);
 
+  const handleEditTags = useCallback((file: FileItemDto) => {
+    setEditingFile(file);
+  }, []);
+
+  const handleTagsUpdated = () => {
+    queryClient.invalidateQueries({ queryKey: ['files'] });
+  };
+
   if (isLoading) {
-    return <div className="loading-container">Loading files...</div>;
+    return (
+      <div className="loading-container flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)] mb-4"></div>
+        Loading files...
+      </div>
+    );
   }
 
   return (
     <div>
-      <h2 className="file-list-title">
-        Files <span className="file-list-count">({totalCount})</span>
+      <h2 className="file-list-title text-xl font-semibold mb-4 text-[var(--text-primary)]">
+        Files <span className="text-[var(--text-tertiary)] text-base font-normal">({totalCount})</span>
       </h2>
-      <div className="file-table-container">
-        <table className="file-table">
+      <div className="file-table-container bg-[var(--surface-primary)] rounded-xl border border-[var(--border-color)] overflow-hidden shadow-sm">
+        <table className="file-table w-full">
           <colgroup>
             <col style={{ width: '30%' }} />
             <col style={{ width: '10%' }} />
             <col style={{ width: '15%' }} />
+            <col style={{ width: '20%' }} />
             <col style={{ width: '15%' }} />
-            <col style={{ width: '15%' }} />
-            <col style={{ width: '15%' }} />
+            <col style={{ width: '10%' }} />
           </colgroup>
-          <thead>
+          <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
             <tr>
-              <th>Name</th>
-              <th className="align-right">Size</th>
-              <th>Type</th>
-              <th>Tags</th>
-              <th>Date</th>
-              <th className="align-center">Actions</th>
+              <th className="text-left py-3 px-4 font-medium text-[var(--text-secondary)]">Name</th>
+              <th className="text-right py-3 px-4 font-medium text-[var(--text-secondary)]">Size</th>
+              <th className="text-left py-3 px-4 font-medium text-[var(--text-secondary)]">Type</th>
+              <th className="text-left py-3 px-4 font-medium text-[var(--text-secondary)]">Tags</th>
+              <th className="text-left py-3 px-4 font-medium text-[var(--text-secondary)]">Date</th>
+              <th className="text-right py-3 px-4 font-medium text-[var(--text-secondary)]">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[var(--border-color)]">
             {files.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
                   No files found
                 </td>
               </tr>
@@ -143,6 +191,7 @@ const FileList = memo(({ files, isLoading, totalCount }: FileListProps) => {
                   index={index}
                   onDelete={handleDelete}
                   onOpen={handleOpen}
+                  onEditTags={handleEditTags}
                   isDeleting={deleteMutation.isPending && deleteMutation.variables === file.id}
                 />
               ))
@@ -150,6 +199,16 @@ const FileList = memo(({ files, isLoading, totalCount }: FileListProps) => {
           </tbody>
         </table>
       </div>
+
+      {editingFile && (
+        <TagEditor
+          fileId={editingFile.id!}
+          initialTags={editingFile.tags || []}
+          isOpen={true}
+          onClose={() => setEditingFile(null)}
+          onTagsUpdated={handleTagsUpdated}
+        />
+      )}
     </div>
   );
 });
@@ -158,3 +217,4 @@ FileList.displayName = 'FileList';
 FileTableRow.displayName = 'FileTableRow';
 
 export default FileList;
+

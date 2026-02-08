@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { FileItemDto, FolderDto, SearchFilesResult, GetFoldersResult } from '../types';
 
 // Base URL for the API, defaults to Vite proxy in dev
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -58,6 +58,10 @@ export const fileApi = {
     await apiClient.post(`/files/${id}/tags`, { tags });
   },
 
+  setTags: async (id: string, tags: string[]): Promise<void> => {
+    await apiClient.put(`/files/${id}/tags`, { tags });
+  },
+
   downloadFile: async (id: string): Promise<string> => {
     return `${API_BASE_URL}/files/${id}/download`;
   },
@@ -71,9 +75,9 @@ export const folderApi = {
   },
 
   createFolder: async (name: string, parentFolderId?: string): Promise<any> => {
-    const response = await apiClient.post('/folders', { 
-      name, 
-      parentFolderId: parentFolderId || null 
+    const response = await apiClient.post('/folders', {
+      name,
+      parentFolderId: parentFolderId || null
     });
     return response.data;
   },
@@ -84,8 +88,8 @@ export const folderApi = {
   },
 
   deleteFolder: async (id: string, deleteFiles: boolean = false): Promise<void> => {
-    await apiClient.delete(`/folders/${id}`, { 
-      params: { deleteFiles } 
+    await apiClient.delete(`/folders/${id}`, {
+      params: { deleteFiles }
     });
   },
 };

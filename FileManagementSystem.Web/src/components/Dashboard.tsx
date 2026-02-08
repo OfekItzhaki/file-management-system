@@ -5,6 +5,7 @@ import FileList from './FileList';
 import FolderTree from './FolderTree';
 import SearchBar from './SearchBar';
 import FileUpload from './FileUpload';
+import ThemeToggle from './ThemeToggle';
 import './Dashboard.css';
 
 // Memoized header component to prevent re-renders when only search results change
@@ -38,14 +39,17 @@ const DashboardHeader = memo(({
       }}>
         File Management System
       </h1>
-      <SearchBar
-        searchTerm={searchTerm}
-        onSearchChange={onSearchChange}
-        isPhotoOnly={isPhotoOnly}
-        onPhotoOnlyChange={onPhotoOnlyChange}
-        isDocumentOnly={isDocumentOnly}
-        onDocumentOnlyChange={onDocumentOnlyChange}
-      />
+      <div className="flex items-center gap-4 w-full">
+        <SearchBar
+          searchTerm={searchTerm}
+          onSearchChange={onSearchChange}
+          isPhotoOnly={isPhotoOnly}
+          onPhotoOnlyChange={onPhotoOnlyChange}
+          isDocumentOnly={isDocumentOnly}
+          onDocumentOnlyChange={onDocumentOnlyChange}
+        />
+        <ThemeToggle />
+      </div>
     </div>
   </header>
 ), (prevProps, nextProps) => {
