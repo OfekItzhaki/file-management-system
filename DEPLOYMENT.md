@@ -123,10 +123,11 @@ This guide covers deploying the Horizon File Management System to production usi
    - Import your Git repository
 
 2. **Configure Build Settings**
-   - Framework Preset: Vite
-   - Root Directory: `FileManagementSystem.Web`
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
+   - Framework Preset: **Vite** (select from dropdown)
+   - Root Directory: `FileManagementSystem.Web` (click Edit button)
+   - Build Command: `npm run build` (auto-detected)
+   - Output Directory: `dist` (auto-detected)
+   - Install Command: `npm install` (auto-detected)
 
 3. **Add Environment Variables**
    - Go to Project Settings → Environment Variables
