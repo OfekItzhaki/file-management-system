@@ -14,7 +14,7 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-primary);
     letter-spacing: -0.025em;
 }
 
@@ -57,7 +57,7 @@
 }
 
 .folder-item:hover:not(.selected) {
-    background: #f8fafc;
+    background: var(--surface-secondary);
 }
 
 .folder-name {
@@ -65,7 +65,7 @@
     min-width: 0;
     font-size: 0.95rem;
     font-weight: 500;
-    color: #475569;
+    color: var(--text-secondary);
     transition: all 0.2s;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -79,7 +79,7 @@
 
 .folder-count {
     font-size: 0.8rem;
-    color: #94a3b8;
+    color: var(--text-tertiary);
     margin-left: 0.5rem;
     font-weight: 500;
 }
@@ -122,7 +122,7 @@
 }
 
 .delete-btn:disabled {
-    background: #cbd5e1;
+    background: var(--surface-secondary);
     cursor: not-allowed;
     opacity: 0.7;
     box-shadow: none;
@@ -131,9 +131,9 @@
 .create-input-container {
     margin-bottom: 1rem;
     padding: 1rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: var(--bg-secondary);
     border-radius: 10px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -141,12 +141,13 @@
     width: 100%;
     padding: 0.625rem 0.75rem;
     font-size: 0.9rem;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     margin-bottom: 0.75rem;
     outline: none;
     transition: all 0.2s;
-    background-color: #ffffff;
+    background-color: var(--surface-primary);
+    color: var(--text-primary);
 }
 
 .folder-input:focus {
@@ -173,7 +174,7 @@
 }
 
 .btn-primary:disabled {
-    background: #cbd5e1;
+    background: var(--surface-secondary);
     cursor: not-allowed;
     opacity: 0.7;
     box-shadow: none;
@@ -182,7 +183,7 @@
 .btn-secondary {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
-    background: #64748b;
+    background: var(--text-secondary);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -192,5 +193,5 @@
 }
 
 .btn-secondary:hover {
-    background: #475569;
+    background: var(--text-primary);
 }

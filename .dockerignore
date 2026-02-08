@@ -26,3 +26,4 @@ logs/
 *.md
 *.ps1
 .env.example
+.kiro/

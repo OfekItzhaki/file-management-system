@@ -145,7 +145,7 @@ const Dashboard = () => {
       display: 'flex',
       height: '100vh',
       flexDirection: 'column',
-      backgroundColor: '#f8fafc',
+      backgroundColor: 'var(--bg-primary)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
       <DashboardHeader

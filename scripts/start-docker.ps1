@@ -78,6 +78,25 @@ else {
     docker-compose up -d --build
 }
 
+# 4. Ensure API and Web services are actually started
+Write-Host "`nVerifying services..." -ForegroundColor Gray
+Start-Sleep -Seconds 2
+
+$apiContainer = docker ps --filter "name=api-service" --format "{{.Names}}"
+$webContainer = docker ps --filter "name=web-service" --format "{{.Names}}"
+
+if (-not $apiContainer) {
+    Write-Host "   API service not running, attempting to start..." -ForegroundColor Yellow
+    docker start (docker ps -a --filter "name=api-service" --format "{{.Names}}")
+    Start-Sleep -Seconds 2
+}
+
+if (-not $webContainer) {
+    Write-Host "   Web service not running, attempting to start..." -ForegroundColor Yellow
+    docker start (docker ps -a --filter "name=web-service" --format "{{.Names}}")
+    Start-Sleep -Seconds 2
+}
+
 Write-Host "`nDocker services started!" -ForegroundColor Green
 Write-Host ("   Web: http://localhost:" + $WebPort) -ForegroundColor Cyan
 Write-Host ("   API: http://localhost:" + $ApiPort + "/swagger") -ForegroundColor Cyan

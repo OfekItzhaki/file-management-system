@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useState, useRef, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Edit2, ExternalLink, Trash2 } from 'lucide-react';
+import { Edit2, ExternalLink, Trash2, MoreVertical, Eye } from 'lucide-react';
 import { fileApi } from '../services/api';
 import type { FileItemDto } from '../types';
 import TagEditor from './TagEditor';
@@ -43,6 +43,44 @@ const FileTableRow = memo(({
   isDeleting: boolean;
 }) => {
   const fileName = file.fileName || getFileName(file.path ?? '');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  const handleRename = () => {
+    setIsDropdownOpen(false);
+    const newName = prompt('Enter new name:', fileName);
+    if (newName && newName !== fileName) {
+      // TODO: Implement rename functionality
+      toast.error('Rename functionality not yet implemented');
+    }
+  };
+
+  const handleView = () => {
+    setIsDropdownOpen(false);
+    onOpen(file);
+  };
+
+  const handleDeleteClick = () => {
+    setIsDropdownOpen(false);
+    onDelete(file.id!, fileName);
+  };
 
   return (
     <tr className={`file-row ${index % 2 === 0 ? 'even' : 'odd'}`}>
@@ -79,22 +117,49 @@ const FileTableRow = memo(({
         {file.createdDate ? new Date(file.createdDate).toLocaleDateString() : '-'}
       </td>
       <td className="file-cell">
-        <div className="action-buttons flex gap-2 justify-end">
+        <div className="action-buttons flex gap-2 justify-end items-center">
           <button
             className="p-1.5 rounded hover:bg-[var(--surface-secondary)] text-[var(--accent-primary)] transition-colors"
             onClick={() => onOpen(file)}
-            title="Open/Download"
+            title="Download"
           >
             <ExternalLink size={16} />
           </button>
-          <button
-            className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors disabled:opacity-50"
-            onClick={() => onDelete(file.id!, fileName)}
-            disabled={isDeleting}
-            title="Delete"
-          >
-            <Trash2 size={16} />
-          </button>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              className="p-1.5 rounded hover:bg-[var(--surface-secondary)] text-[var(--text-secondary)] transition-colors"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              title="More actions"
+            >
+              <MoreVertical size={16} />
+            </button>
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-1 w-40 bg-[var(--surface-primary)] border border-[var(--border-color)] rounded-lg shadow-lg z-10 overflow-hidden">
+                <button
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--surface-secondary)] text-[var(--text-primary)] flex items-center gap-2 transition-colors"
+                  onClick={handleView}
+                >
+                  <Eye size={14} />
+                  View
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-[var(--surface-secondary)] text-[var(--text-primary)] flex items-center gap-2 transition-colors"
+                  onClick={handleRename}
+                >
+                  <Edit2 size={14} />
+                  Rename
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-500 flex items-center gap-2 transition-colors disabled:opacity-50"
+                  onClick={handleDeleteClick}
+                  disabled={isDeleting}
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </td>
     </tr>

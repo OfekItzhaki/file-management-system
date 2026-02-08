@@ -1,9 +1,9 @@
 .upload-container {
-    border: 2px dashed #cbd5e1;
+    border: 2px dashed var(--border-color);
     border-radius: 12px;
     padding: 3rem 2rem;
     text-align: center;
-    background: #ffffff;
+    background: var(--surface-primary);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 1.5rem;
@@ -37,7 +37,7 @@
 
 .upload-text {
     font-size: 1rem;
-    color: #475569;
+    color: var(--text-secondary);
     font-weight: 500;
     margin: 0 0 0.5rem 0;
 }
@@ -50,7 +50,7 @@
 
 .upload-subtext {
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--text-tertiary);
     margin: 0;
 }
 
