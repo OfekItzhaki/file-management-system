@@ -87,10 +87,21 @@ Every project MUST implement:
 
 ## ✅ Code Quality Standards
 
+### Before Committing
+**ALWAYS run these checks before committing:**
+
+```bash
+# Frontend (in FileManagementSystem.Web)
+npm run lint          # Check for linting errors
+npm run lint -- --fix # Auto-fix linting errors
+npm run build         # Ensure build succeeds
+```
+
 ### Frontend
 - **Zero `any` types** - always use proper TypeScript types
+- **Prettier**: Code must be formatted according to `.prettierrc`
+- **ESLint**: Code must pass all linting rules
 - Vite/Build must succeed without errors
-- Use ESLint and Prettier for formatting
 - Components should be under 200 lines - extract logic if larger
 
 ### Backend
@@ -118,6 +129,8 @@ Every project MUST implement:
 
 A feature is only "Done" when:
 - ✅ Code builds without errors
+- ✅ **Passes ESLint checks** (`npm run lint`)
+- ✅ **Formatted with Prettier** (auto-fixed with `npm run lint -- --fix`)
 - ✅ Follows naming conventions
 - ✅ Uses proper TypeScript types (no `any`)
 - ✅ Implements error handling

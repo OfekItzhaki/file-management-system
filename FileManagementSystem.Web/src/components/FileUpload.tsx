@@ -23,7 +23,7 @@ const FileUpload = memo(({ destinationFolderId }: FileUploadProps) => {
     },
     onError: (error: Error, file) => {
       toast.error(`Failed to upload ${file.name}: ${error.message || 'Unknown error'}`);
-    }
+    },
   });
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -56,7 +56,7 @@ const FileUpload = memo(({ destinationFolderId }: FileUploadProps) => {
         uploadMutation.mutate(file);
       }
     },
-    [uploadMutation]
+    [uploadMutation],
   );
 
   const handleFileInput = useCallback(
@@ -69,7 +69,7 @@ const FileUpload = memo(({ destinationFolderId }: FileUploadProps) => {
       }
       e.target.value = '';
     },
-    [uploadMutation]
+    [uploadMutation],
   );
 
   return (
@@ -81,29 +81,29 @@ const FileUpload = memo(({ destinationFolderId }: FileUploadProps) => {
       onDrop={handleDrop}
     >
       <input
-        type="file"
+        type='file'
         multiple
         onChange={handleFileInput}
         style={{ display: 'none' }}
-        id="file-upload-input"
+        id='file-upload-input'
       />
-      <label htmlFor="file-upload-input" className="upload-label">
+      <label htmlFor='file-upload-input' className='upload-label'>
         {isDragging ? (
           <div>
-            <div className="upload-icon large">📤</div>
-            <p className="upload-text highlight">Drop files here to upload</p>
+            <div className='upload-icon large'>📤</div>
+            <p className='upload-text highlight'>Drop files here to upload</p>
           </div>
         ) : (
           <div>
-            <div className="upload-icon">📁</div>
-            <p className="upload-text">Drag and drop files here, or click to select files</p>
-            <p className="upload-subtext">Multiple files supported</p>
+            <div className='upload-icon'>📁</div>
+            <p className='upload-text'>Drag and drop files here, or click to select files</p>
+            <p className='upload-subtext'>Multiple files supported</p>
           </div>
         )}
       </label>
       {uploadMutation.isPending && (
-        <div className="uploading-status">
-          <span className="spinner"></span>
+        <div className='uploading-status'>
+          <span className='spinner'></span>
           Uploading files...
         </div>
       )}

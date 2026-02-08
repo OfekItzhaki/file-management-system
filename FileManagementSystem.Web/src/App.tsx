@@ -13,12 +13,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <BrowserRouter>
-          <div className="app">
+          <div className='app'>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path='/' element={<Dashboard />} />
             </Routes>
             <Toaster
-              position="bottom-right"
+              position='bottom-right'
               toastOptions={{
                 duration: 4000,
                 style: {

@@ -33,13 +33,13 @@ export const fileApi = {
     return response.data;
   },
 
-  uploadFile: async (file: File, destinationFolderId?: string): Promise<any> => {
+  uploadFile: async (file: File, destinationFolderId?: string): Promise<FileItemDto> => {
     const formData = new FormData();
     formData.append('file', file);
     if (destinationFolderId) {
       formData.append('destinationFolderId', destinationFolderId);
     }
-    const response = await apiClient.post('/files/upload', formData, {
+    const response = await apiClient.post<FileItemDto>('/files/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
@@ -49,8 +49,8 @@ export const fileApi = {
     await apiClient.delete(`/files/${id}`, { params: { moveToRecycleBin } });
   },
 
-  renameFile: async (id: string, newName: string): Promise<any> => {
-    const response = await apiClient.put(`/files/${id}/rename`, { newName });
+  renameFile: async (id: string, newName: string): Promise<FileItemDto> => {
+    const response = await apiClient.put<FileItemDto>(`/files/${id}/rename`, { newName });
     return response.data;
   },
 
@@ -74,22 +74,22 @@ export const folderApi = {
     return response.data;
   },
 
-  createFolder: async (name: string, parentFolderId?: string): Promise<any> => {
-    const response = await apiClient.post('/folders', {
+  createFolder: async (name: string, parentFolderId?: string): Promise<FolderDto> => {
+    const response = await apiClient.post<FolderDto>('/folders', {
       name,
-      parentFolderId: parentFolderId || null
+      parentFolderId: parentFolderId || null,
     });
     return response.data;
   },
 
-  renameFolder: async (id: string, newName: string): Promise<any> => {
-    const response = await apiClient.put(`/folders/${id}/rename`, { newName });
+  renameFolder: async (id: string, newName: string): Promise<FolderDto> => {
+    const response = await apiClient.put<FolderDto>(`/folders/${id}/rename`, { newName });
     return response.data;
   },
 
   deleteFolder: async (id: string, deleteFiles: boolean = false): Promise<void> => {
     await apiClient.delete(`/folders/${id}`, {
-      params: { deleteFiles }
+      params: { deleteFiles },
     });
   },
 };

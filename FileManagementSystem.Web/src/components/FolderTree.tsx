@@ -37,18 +37,20 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
   });
 
   const renameMutation = useMutation({
-    mutationFn: ({ id, newName }: { id: string; newName: string }) => folderApi.renameFolder(id, newName),
+    mutationFn: ({ id, newName }: { id: string; newName: string }) =>
+      folderApi.renameFolder(id, newName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folders'] });
       queryClient.invalidateQueries({ queryKey: ['files'] });
       toast.success('Folder renamed successfully');
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       // Check for specific error message from backend
-      const errorMessage = error.response?.data?.detail || error.message || "Failed to rename folder";
+      const errorMessage =
+        error.response?.data?.detail || error.message || 'Failed to rename folder';
 
       // Special handling for Default folder protection
-      if (errorMessage.includes("Default folder")) {
+      if (errorMessage.includes('Default folder')) {
         toast.error(errorMessage, { duration: 5000, icon: '🛡️' });
       } else {
         toast.error(errorMessage);
@@ -57,19 +59,21 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ id, deleteFiles }: { id: string; deleteFiles: boolean }) => folderApi.deleteFolder(id, deleteFiles),
+    mutationFn: ({ id, deleteFiles }: { id: string; deleteFiles: boolean }) =>
+      folderApi.deleteFolder(id, deleteFiles),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folders'] });
       queryClient.invalidateQueries({ queryKey: ['files'] });
       if (selectedFolderId) onFolderSelect(undefined);
       toast.success('Folder deleted successfully');
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       // Check for specific error message from backend
-      const errorMessage = error.response?.data?.detail || error.message || "Failed to delete folder";
+      const errorMessage =
+        error.response?.data?.detail || error.message || 'Failed to delete folder';
 
       // Special handling for Default folder protection
-      if (errorMessage.includes("Default folder")) {
+      if (errorMessage.includes('Default folder')) {
         toast.error(errorMessage, { duration: 5000, icon: '🛡️' });
       } else {
         toast.error(errorMessage);
@@ -89,7 +93,7 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
   };
 
   const renderFolders = (folderList: FolderDto[], level: number = 0) => {
-    return folderList.map(folder => (
+    return folderList.map((folder) => (
       <div key={folder.id}>
         <FolderItem
           folder={folder}
@@ -101,16 +105,20 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
           onDelete={handleDeleteFolder}
           isDeleting={deleteMutation.isPending}
         />
-        {folder.subFolders && folder.subFolders.length > 0 && renderFolders(folder.subFolders, level + 1)}
+        {folder.subFolders &&
+          folder.subFolders.length > 0 &&
+          renderFolders(folder.subFolders, level + 1)}
       </div>
     ));
   };
 
   return (
-    <div className="folder-tree-container">
-      <div className="folder-tree-header">
-        <h3 className="folder-tree-title">Folders</h3>
-        <button className="new-folder-btn" onClick={() => setShowCreateInput(true)}>+ New</button>
+    <div className='folder-tree-container'>
+      <div className='folder-tree-header'>
+        <h3 className='folder-tree-title'>Folders</h3>
+        <button className='new-folder-btn' onClick={() => setShowCreateInput(true)}>
+          + New
+        </button>
       </div>
 
       {showCreateInput && (
@@ -125,7 +133,7 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
         className={`folder-item ${selectedFolderId === undefined ? 'selected' : ''}`}
         onClick={() => onFolderSelect(undefined)}
       >
-        <span className="folder-name">📂 All Files</span>
+        <span className='folder-name'>📂 All Files</span>
       </div>
 
       {renderFolders(folders)}

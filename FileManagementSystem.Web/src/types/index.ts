@@ -11,7 +11,7 @@ import type {
   RenameFolderResult,
   DeleteFolderResult,
   AddTagsRequest,
-  UploadFileResult
+  UploadFileResult,
 } from '../services/api-client';
 
 export type {
@@ -26,7 +26,7 @@ export type {
   RenameFolderResult,
   DeleteFolderResult,
   AddTagsRequest,
-  UploadFileResult
+  UploadFileResult,
 };
 
 export interface FolderDto extends BaseFolderDto {
