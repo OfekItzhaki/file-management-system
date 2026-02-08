@@ -6,7 +6,7 @@ services:
       - POSTGRES_PASSWORD=horizon_password
       - POSTGRES_DB=horizon_fms
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +21,7 @@ services:
     environment:
       - ACCEPT_EULA=Y
     ports:
-      - "5341:80"
+      - "${SEQ_PORT:-5341}:80"
     volumes:
       - seq-data:/data
     restart: always
@@ -29,7 +29,7 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -44,7 +44,7 @@ services:
       context: .
       dockerfile: FileManagementSystem.API/Dockerfile
     ports:
-      - "5295:5295"
+      - "${API_PORT:-5295}:5295"
     depends_on:
       database:
         condition: service_healthy
@@ -54,12 +54,21 @@ services:
         condition: service_started
     volumes:
       - ./logs:/app/logs
+      - ./storage:/app/storage
       - api-data:/app/data
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Storage__RootPath=/app/storage
+      - ThumbnailSettings__Directory=/app/storage/thumbnails
+      - ConnectionStrings__DefaultConnection=Host=database;Port=5432;Database=horizon_fms;Username=horizon_user;Password=horizon_password;
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=database;Port=5432;Database=horizon_fms;Username=horizon_user;Password=horizon_password;
       - SEQ_URL=http://seq:5341
       - REDIS_CONNECTION=redis:6379
+      - CloudinarySettings__CloudName=${CLOUDINARY_CLOUD_NAME}
+      - CloudinarySettings__ApiKey=${CLOUDINARY_API_KEY}
+      - CloudinarySettings__ApiSecret=${CLOUDINARY_API_SECRET}
+      - CloudinarySettings__IsEnabled=true
     restart: always
 
   web-service:
@@ -67,7 +76,7 @@ services:
       context: ./FileManagementSystem.Web
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "${WEB_PORT:-8080}:80"
     depends_on:
       api-service:
         condition: service_started

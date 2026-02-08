@@ -1,0 +1,28 @@
+# SCM
+.git
+.gitignore
+
+# IDEs
+.vs
+.vscode
+.idea
+*.suo
+*.user
+*.swp
+
+# Build results
+**/bin/
+**/obj/
+**/out/
+
+# Dependencies
+**/node_modules/
+
+# Horizon FMS specific
+docs/
+scripts/
+fallback_db/
+logs/
+*.md
+*.ps1
+.env.example
