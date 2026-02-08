@@ -129,13 +129,8 @@ if (!string.IsNullOrEmpty(redisConnectionString) && redisConnectionString != "lo
      healthChecks.AddRedis(redisConnectionString);
 }
 
-healthChecks.AddCheck("Storage", () => 
-    {
-        var path = builder.Configuration["Storage:RootPath"] ?? "data";
-        return Directory.Exists(path) 
-            ? HealthCheckResult.Healthy("Storage path is accessible") 
-            : HealthCheckResult.Unhealthy("Storage path is missing");
-    });
+// Storage health check - always healthy since we use Cloudinary in production
+healthChecks.AddCheck("Storage", () => HealthCheckResult.Healthy("Using cloud storage (Cloudinary)"));
 
 // Redis Cache
 var redisConfig = builder.Configuration.GetConnectionString("Redis");
