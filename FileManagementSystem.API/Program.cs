@@ -158,10 +158,15 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // React dev servers
+        policy.WithOrigins(
+                "http://localhost:3000", 
+                "http://localhost:5173",
+                "https://horizon-fms.vercel.app",
+                "https://*.vercel.app") // Allow all Vercel preview deployments
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowCredentials()
+              .SetIsOriginAllowedToAllowWildcardSubdomains();
     });
 });
 
