@@ -147,7 +147,15 @@ builder.Services.AddSwaggerGen(c =>
 // Health Checks - Make them degraded instead of unhealthy to allow app to start
 var healthChecks = builder.Services.AddHealthChecks();
 
-var connectionString = ConvertPostgresUri(builder.Configuration.GetConnectionString("DefaultConnection"));
+// Debug: Log what we're getting from configuration
+var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"[DB CONFIG] Raw connection string from config: {(string.IsNullOrEmpty(rawConnectionString) ? "NULL OR EMPTY" : $"Length={rawConnectionString.Length}, First 80 chars={rawConnectionString.Substring(0, Math.Min(80, rawConnectionString.Length))}")}");
+
+// Also check if it's in environment variables directly
+var envConnectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+Console.WriteLine($"[DB CONFIG] Connection string from ENV: {(string.IsNullOrEmpty(envConnectionString) ? "NULL OR EMPTY" : $"Length={envConnectionString.Length}, First 80 chars={envConnectionString.Substring(0, Math.Min(80, envConnectionString.Length))}")}");
+
+var connectionString = ConvertPostgresUri(rawConnectionString);
 if (!string.IsNullOrEmpty(connectionString) && connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
 {
     Console.WriteLine("[HEALTH CHECK] Adding PostgreSQL health check (degraded on failure)");
