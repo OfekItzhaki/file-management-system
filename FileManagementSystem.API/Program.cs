@@ -33,15 +33,26 @@ var builder = WebApplication.CreateBuilder(args);
 static string ConvertPostgresUri(string connectionString)
 {
     if (string.IsNullOrEmpty(connectionString))
+    {
+        Console.WriteLine("WARNING: Connection string is null or empty");
         return connectionString;
+    }
+    
+    Console.WriteLine($"Original connection string: {connectionString.Substring(0, Math.Min(50, connectionString.Length))}...");
     
     // If it's already in Host= format, return as-is
     if (connectionString.Contains("Host="))
+    {
+        Console.WriteLine("Connection string already in Host= format");
         return connectionString;
+    }
     
     // If it's not a postgresql:// URI, return as-is (probably SQLite)
     if (!connectionString.StartsWith("postgresql://") && !connectionString.StartsWith("postgres://"))
+    {
+        Console.WriteLine("Connection string is not a PostgreSQL URI, returning as-is");
         return connectionString;
+    }
     
     try
     {
@@ -53,10 +64,13 @@ static string ConvertPostgresUri(string connectionString)
         var username = userInfo.Length > 0 ? userInfo[0] : "";
         var password = userInfo.Length > 1 ? userInfo[1] : "";
         
-        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+        var converted = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+        Console.WriteLine($"Converted connection string: Host={host};Port={port};Database={database};Username={username};Password=***");
+        return converted;
     }
-    catch
+    catch (Exception ex)
     {
+        Console.WriteLine($"ERROR converting connection string: {ex.Message}");
         return connectionString; // Return original if parsing fails
     }
 }

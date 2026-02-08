@@ -35,7 +35,7 @@ services:
         fromDatabase:
           name: horizon-fms-db
           property: connectionString
-      - key: REDIS_CONNECTION
+      - key: ConnectionStrings__Redis
         fromService:
           type: redis
           name: horizon-fms-redis
