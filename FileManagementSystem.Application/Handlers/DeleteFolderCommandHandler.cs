@@ -9,13 +9,16 @@ namespace FileManagementSystem.Application.Handlers;
 public class DeleteFolderCommandHandler : IRequestHandler<DeleteFolderCommand, DeleteFolderResult>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFilePathResolver _filePathResolver;
     private readonly ILogger<DeleteFolderCommandHandler> _logger;
     
     public DeleteFolderCommandHandler(
         IUnitOfWork unitOfWork,
+        IFilePathResolver filePathResolver,
         ILogger<DeleteFolderCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
+        _filePathResolver = filePathResolver;
         _logger = logger;
     }
     
@@ -32,13 +35,7 @@ public class DeleteFolderCommandHandler : IRequestHandler<DeleteFolderCommand, D
         }
         
         // Prevent deletion of "Default" folder
-        // More reliable check: Normalize paths to handle different formats (relative/absolute, different separators)
-        // This ensures we catch the Default folder regardless of how the path is stored in the database
-        var storageBasePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "FileManagementSystem",
-            "Storage"
-        );
+        var storageBasePath = _filePathResolver.StorageRootPath;
         var expectedDefaultPath = Path.Combine(storageBasePath, "Default");
         
         // Normalize paths for comparison - this handles:
@@ -53,11 +50,11 @@ public class DeleteFolderCommandHandler : IRequestHandler<DeleteFolderCommand, D
         // 2. Normalized paths match exactly
         // 3. Path ends with "Default" (for nested scenarios)
         // 4. Original path equals "Default" (for edge cases)
-        var isDefaultFolder = folder.Name.Equals("Default", StringComparison.OrdinalIgnoreCase) ||
+        var isDefaultFolder = (folder.Name?.Trim().Equals("Default", StringComparison.OrdinalIgnoreCase) ?? false) ||
             normalizedFolderPath.Equals(normalizedDefaultPath, StringComparison.OrdinalIgnoreCase) ||
             normalizedFolderPath.EndsWith(Path.DirectorySeparatorChar + "Default", StringComparison.OrdinalIgnoreCase) ||
             normalizedFolderPath.EndsWith(Path.AltDirectorySeparatorChar + "Default", StringComparison.OrdinalIgnoreCase) ||
-            folder.Path.Equals("Default", StringComparison.OrdinalIgnoreCase);
+            (folder.Path?.Trim().Equals("Default", StringComparison.OrdinalIgnoreCase) ?? false);
         
         if (isDefaultFolder)
         {

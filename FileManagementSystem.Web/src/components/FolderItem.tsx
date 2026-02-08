@@ -65,14 +65,14 @@ export const FolderItem = ({
             ) : (
                 <>
                     <span className="folder-name" onClick={() => onSelect(folder.id!)}>
-                        📁 {folder.name}
+                        📁 {folder.name?.trim().toLowerCase() === 'default' && '🛡️ '}{folder.name}
                         {((folder.fileCount ?? 0) > 0 || (folder.subFolderCount ?? 0) > 0) && (
                             <span className="folder-count">
                                 ({(folder.fileCount ?? 0) + (folder.subFolderCount ?? 0)})
                             </span>
                         )}
                     </span>
-                    {(isHovered || isMobile) && (
+                    {(isHovered || isMobile) && folder.name?.trim().toLowerCase() !== 'default' && (
                         <div className="folder-actions">
                             <button
                                 className="action-btn rename-btn"

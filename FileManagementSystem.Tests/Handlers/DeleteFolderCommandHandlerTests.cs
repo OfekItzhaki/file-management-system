@@ -13,15 +13,19 @@ public class DeleteFolderCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ILogger<DeleteFolderCommandHandler>> _loggerMock;
+    private readonly Mock<IFilePathResolver> _filePathResolverMock;
     private readonly DeleteFolderCommandHandler _handler;
 
     public DeleteFolderCommandHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _loggerMock = new Mock<ILogger<DeleteFolderCommandHandler>>();
+        _filePathResolverMock = new Mock<IFilePathResolver>();
+        _filePathResolverMock.Setup(r => r.StorageRootPath).Returns("C:\\storage");
         
         _handler = new DeleteFolderCommandHandler(
             _unitOfWorkMock.Object,
+            _filePathResolverMock.Object,
             _loggerMock.Object);
     }
 

@@ -43,8 +43,16 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
       queryClient.invalidateQueries({ queryKey: ['files'] });
       toast.success('Folder renamed successfully');
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to rename folder: ${error.message || 'Unknown error'}`);
+    onError: (error: any) => {
+      // Check for specific error message from backend
+      const errorMessage = error.response?.data?.detail || error.message || "Failed to rename folder";
+
+      // Special handling for Default folder protection
+      if (errorMessage.includes("Default folder")) {
+        toast.error(errorMessage, { duration: 5000, icon: '🛡️' });
+      } else {
+        toast.error(errorMessage);
+      }
     },
   });
 
@@ -56,9 +64,16 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
       if (selectedFolderId) onFolderSelect(undefined);
       toast.success('Folder deleted successfully');
     },
-    onError: (error: Error) => {
-      const errorMessage = error.message || 'Unknown error';
-      toast.error(errorMessage);
+    onError: (error: any) => {
+      // Check for specific error message from backend
+      const errorMessage = error.response?.data?.detail || error.message || "Failed to delete folder";
+
+      // Special handling for Default folder protection
+      if (errorMessage.includes("Default folder")) {
+        toast.error(errorMessage, { duration: 5000, icon: '🛡️' });
+      } else {
+        toast.error(errorMessage);
+      }
     },
   });
 

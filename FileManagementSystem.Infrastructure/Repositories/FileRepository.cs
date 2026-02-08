@@ -34,6 +34,7 @@ public class FileRepository : Repository<FileItem>, IFileRepository
         {
             var term = searchTerm.ToLower();
             query = query.Where(f => 
+                (f.FileName != null && f.FileName.ToLower().Contains(term)) ||
                 (f.Path != null && f.Path.ToLower().Contains(term)) ||
                 (f.MimeType != null && f.MimeType.ToLower().Contains(term)) ||
                 (f.CameraMake != null && f.CameraMake.ToLower().Contains(term)) ||

@@ -12,15 +12,18 @@ public class RenameFolderCommandHandler : IRequestHandler<RenameFolderCommand, R
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly FolderPathService _folderPathService;
+    private readonly IFilePathResolver _filePathResolver;
     private readonly ILogger<RenameFolderCommandHandler> _logger;
     
     public RenameFolderCommandHandler(
         IUnitOfWork unitOfWork,
         FolderPathService folderPathService,
+        IFilePathResolver filePathResolver,
         ILogger<RenameFolderCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _folderPathService = folderPathService;
+        _filePathResolver = filePathResolver;
         _logger = logger;
     }
     
@@ -39,6 +42,28 @@ public class RenameFolderCommandHandler : IRequestHandler<RenameFolderCommand, R
         {
             _logger.LogWarning("Folder not found for rename: {FolderId}", request.FolderId);
             return new RenameFolderResult(false, null, "Folder not found");
+        }
+
+        // Prevent renaming of "Default" folder
+        var storageBasePath = _filePathResolver.StorageRootPath;
+        var expectedDefaultPath = Path.Combine(storageBasePath, "Default");
+        var normalizedFolderPath = Path.GetFullPath(folder.Path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var normalizedDefaultPath = Path.GetFullPath(expectedDefaultPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        var isDefaultFolder = (folder.Name?.Trim().Equals("Default", StringComparison.OrdinalIgnoreCase) ?? false) ||
+            normalizedFolderPath.Equals(normalizedDefaultPath, StringComparison.OrdinalIgnoreCase) ||
+            normalizedFolderPath.EndsWith(Path.DirectorySeparatorChar + "Default", StringComparison.OrdinalIgnoreCase) ||
+            normalizedFolderPath.EndsWith(Path.AltDirectorySeparatorChar + "Default", StringComparison.OrdinalIgnoreCase) ||
+            (folder.Path?.Trim().Equals("Default", StringComparison.OrdinalIgnoreCase) ?? false);
+
+        _logger.LogInformation("Checking Default folder protection: Name={Name}, Path={Path}, NormPath={NormPath}, NormDefault={NormDefault}, IsDefault={IsDefault}", 
+            folder.Name, folder.Path, normalizedFolderPath, normalizedDefaultPath, isDefaultFolder);
+
+        if (isDefaultFolder)
+        {
+            _logger.LogWarning("Attempt to rename Default folder blocked: {FolderId}, Name: {Name}, Path: {Path}", 
+                folder.Id, folder.Name, folder.Path);
+            return new RenameFolderResult(false, null, "The Default folder cannot be renamed.");
         }
         
         // Check if a folder with the new name already exists under the same parent
