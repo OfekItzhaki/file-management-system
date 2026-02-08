@@ -29,6 +29,38 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Helper function to convert postgresql:// URI to Npgsql connection string format
+static string ConvertPostgresUri(string connectionString)
+{
+    if (string.IsNullOrEmpty(connectionString))
+        return connectionString;
+    
+    // If it's already in Host= format, return as-is
+    if (connectionString.Contains("Host="))
+        return connectionString;
+    
+    // If it's not a postgresql:// URI, return as-is (probably SQLite)
+    if (!connectionString.StartsWith("postgresql://") && !connectionString.StartsWith("postgres://"))
+        return connectionString;
+    
+    try
+    {
+        var uri = new Uri(connectionString);
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var database = uri.AbsolutePath.TrimStart('/');
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo.Length > 0 ? userInfo[0] : "";
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+    }
+    catch
+    {
+        return connectionString; // Return original if parsing fails
+    }
+}
+
 // Configure Serilog with Seq
 var loggerConfiguration = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
@@ -81,8 +113,8 @@ builder.Services.AddSwaggerGen(c =>
 // Health Checks
 var healthChecks = builder.Services.AddHealthChecks();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (connectionString?.Contains("Host=") == true || connectionString?.StartsWith("postgresql://") == true || connectionString?.StartsWith("postgres://") == true)
+var connectionString = ConvertPostgresUri(builder.Configuration.GetConnectionString("DefaultConnection"));
+if (connectionString?.Contains("Host=") == true)
 {
     healthChecks.AddNpgSql(connectionString);
 }
@@ -206,13 +238,13 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(assembly);
 
 // DbContext - register directly for EF Core compatibility
-var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+var dbConnectionString = ConvertPostgresUri(builder.Configuration.GetConnectionString("DefaultConnection")) 
     ?? "Data Source=filemanager.db";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    // Check if it's PostgreSQL (either Host= format or postgresql:// format)
-    if (dbConnectionString.Contains("Host=") || dbConnectionString.StartsWith("postgresql://") || dbConnectionString.StartsWith("postgres://"))
+    // Check if it's PostgreSQL (Host= format after conversion)
+    if (dbConnectionString.Contains("Host="))
     {
         options.UseNpgsql(dbConnectionString);
     }
