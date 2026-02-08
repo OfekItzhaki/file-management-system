@@ -162,6 +162,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000", 
                 "http://localhost:5173",
                 "https://horizon-fms.vercel.app",
+                "https://horizon-fms.ofeklabs.dev",
                 "https://*.vercel.app") // Allow all Vercel preview deployments
               .AllowAnyMethod()
               .AllowAnyHeader()
