@@ -1,0 +1,56 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: horizon-fms-db
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile.postgres
+    envVars:
+      - key: POSTGRES_USER
+        value: horizon_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: horizon_fms
+
+  # Redis Cache
+  - type: redis
+    name: horizon-fms-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
+  # .NET API Service
+  - type: web
+    name: horizon-fms-api
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./FileManagementSystem.API/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: horizon-fms-db
+          property: connectionString
+      - key: REDIS_CONNECTION
+        fromService:
+          type: redis
+          name: horizon-fms-redis
+          property: connectionString
+      - key: CloudinarySettings__CloudName
+        sync: false
+      - key: CloudinarySettings__ApiKey
+        sync: false
+      - key: CloudinarySettings__ApiSecret
+        sync: false
+      - key: CloudinarySettings__IsEnabled
+        value: true
+      - key: Storage__RootPath
+        value: /app/storage
+      - key: ThumbnailSettings__Directory
+        value: /app/storage/thumbnails

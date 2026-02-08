@@ -568,6 +568,176 @@ A feature or task is only considered "Done" when ALL of the following are met:
 
 ---
 
+## 🚀 Deployment & Production
+
+### Deployment Principles
+- **Infrastructure as Code**: All infrastructure should be defined in code (Docker Compose, Kubernetes manifests, Terraform, etc.)
+- **Environment Parity**: Development, staging, and production should be as similar as possible
+- **Automated Deployments**: Use CI/CD pipelines for consistent, repeatable deployments
+- **Zero-Downtime Deployments**: Implement blue-green or rolling deployments
+- **Rollback Strategy**: Always have a plan to quickly rollback failed deployments
+
+### Deployment Platforms
+
+#### Platform-as-a-Service (PaaS)
+- **Render**: Docker-based deployments, managed databases, auto-scaling
+- **Vercel**: Optimized for frontend frameworks (React, Next.js, Vue, etc.)
+- **Netlify**: Static sites and serverless functions
+- **Heroku**: Classic PaaS, easy to use
+- **Railway**: Modern PaaS with great DX
+- **Fly.io**: Global edge deployment
+
+#### Cloud Providers
+- **AWS**: ECS/Fargate, Lambda, S3, RDS, ElastiCache
+- **Azure**: App Service, Functions, Blob Storage, SQL Database
+- **Google Cloud**: Cloud Run, Cloud Functions, Cloud Storage, Cloud SQL
+- **DigitalOcean**: App Platform, Droplets, Managed Databases
+
+#### Container Orchestration
+- **Kubernetes**: Production-grade orchestration for complex applications
+- **Docker Swarm**: Simpler alternative to Kubernetes
+- **Nomad**: Flexible workload orchestrator
+
+### Deployment Checklist
+
+#### Pre-Deployment
+- ✅ All tests passing (unit, integration, E2E)
+- ✅ Code reviewed and approved
+- ✅ Security scan completed (dependencies, code)
+- ✅ Performance testing completed
+- ✅ Database migrations tested
+- ✅ Environment variables documented
+- ✅ Rollback plan documented
+
+#### Deployment
+- ✅ Database migrations run successfully
+- ✅ Health checks passing
+- ✅ Smoke tests passing
+- ✅ Monitoring and alerts configured
+- ✅ Logs flowing to aggregation service
+- ✅ SSL/TLS certificates valid
+
+#### Post-Deployment
+- ✅ Monitor error rates and performance
+- ✅ Verify critical user flows
+- ✅ Check resource utilization
+- ✅ Review logs for errors
+- ✅ Update documentation
+- ✅ Notify team of deployment
+
+### Environment Configuration
+
+#### Development
+- Local Docker Compose setup
+- Hot reload enabled
+- Debug logging
+- Mock external services (optional)
+- Seed data for testing
+
+#### Staging
+- Production-like environment
+- Real external services (test accounts)
+- Automated deployments from develop branch
+- Used for QA and integration testing
+
+#### Production
+- High availability configuration
+- Auto-scaling enabled
+- Production credentials
+- Automated deployments from main branch
+- Monitoring and alerting active
+
+### Secrets Management
+- **Never commit secrets** to version control
+- Use environment variables for configuration
+- Use secret management services:
+  - **AWS**: Secrets Manager, Parameter Store
+  - **Azure**: Key Vault
+  - **Google Cloud**: Secret Manager
+  - **HashiCorp Vault**: Universal secret management
+  - **Doppler**: Modern secrets management
+- Rotate secrets regularly
+- Use different secrets for each environment
+
+### Monitoring & Observability
+
+#### Application Monitoring
+- **APM Tools**: New Relic, Datadog, Application Insights
+- **Error Tracking**: Sentry, Rollbar, Bugsnag
+- **Uptime Monitoring**: UptimeRobot, Pingdom, StatusCake
+
+#### Infrastructure Monitoring
+- **Metrics**: Prometheus + Grafana, CloudWatch, Azure Monitor
+- **Logs**: ELK Stack, Seq, Datadog, Splunk
+- **Tracing**: Jaeger, Zipkin, OpenTelemetry
+
+#### Key Metrics to Monitor
+- **Response Times**: P50, P95, P99 latency
+- **Error Rates**: 4xx and 5xx responses
+- **Throughput**: Requests per second
+- **Resource Usage**: CPU, memory, disk, network
+- **Database**: Query performance, connection pool
+- **Cache**: Hit rate, eviction rate
+
+### Disaster Recovery
+
+#### Backup Strategy
+- **Database**: Daily automated backups, point-in-time recovery
+- **Files**: Replicate to multiple regions (S3, Azure Blob)
+- **Configuration**: Version controlled, backed up
+- **Retention**: 30 days minimum, longer for compliance
+
+#### Recovery Procedures
+- Document recovery time objective (RTO)
+- Document recovery point objective (RPO)
+- Test recovery procedures regularly
+- Maintain runbooks for common incidents
+
+### Performance Optimization
+
+#### Backend
+- Use caching aggressively (Redis, in-memory)
+- Optimize database queries (indexes, query plans)
+- Implement connection pooling
+- Use async/await for I/O operations
+- Enable compression (gzip, brotli)
+
+#### Frontend
+- Code splitting and lazy loading
+- Optimize images (WebP, compression)
+- Use CDN for static assets
+- Implement service workers for offline support
+- Minimize bundle size
+
+#### Database
+- Add indexes for frequently queried columns
+- Use read replicas for read-heavy workloads
+- Implement query caching
+- Partition large tables
+- Regular maintenance (VACUUM, ANALYZE)
+
+### Cost Optimization
+
+#### Compute
+- Right-size instances (don't over-provision)
+- Use auto-scaling to match demand
+- Use spot/preemptible instances for non-critical workloads
+- Shut down non-production environments when not in use
+
+#### Storage
+- Use appropriate storage tiers (hot, cool, archive)
+- Implement lifecycle policies for old data
+- Compress data where possible
+- Delete unused resources
+
+#### Monitoring
+- Set up billing alerts
+- Review cost reports regularly
+- Use cost allocation tags
+- Optimize data transfer costs
+
+---
+
 *The Horizon Standard - Universal Architecture & Excellence Blueprint*  
 *Created February 2026*  
 *Version 1.0*
