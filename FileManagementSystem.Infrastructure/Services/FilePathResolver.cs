@@ -10,14 +10,28 @@ namespace FileManagementSystem.Infrastructure.Services;
 public class FilePathResolver : IFilePathResolver
 {
     private readonly ILogger<FilePathResolver> _logger;
+    private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
 
-    public FilePathResolver(ILogger<FilePathResolver> logger)
+    public FilePathResolver(
+        ILogger<FilePathResolver> logger,
+        Microsoft.Extensions.Configuration.IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
     }
+
+    public string StorageRootPath => _configuration["Storage:RootPath"] 
+        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileManagementSystem", "Storage");
 
     public string? ResolveFilePath(string storedPath, bool isCompressed)
     {
+        // 0. If it's a URL, return as-is (used by cloud storage providers)
+        if (Uri.TryCreate(storedPath, UriKind.Absolute, out var uriResult) && 
+            (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+        {
+            return storedPath;
+        }
+
         var triedPaths = new List<string>();
         var pathsToTry = new List<string>();
 
@@ -40,11 +54,7 @@ public class FilePathResolver : IFilePathResolver
         // 2. If stored path is relative, try resolving it
         if (!Path.IsPathRooted(storedPath))
         {
-            var storageBasePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "FileManagementSystem",
-                "Storage"
-            );
+            var storageBasePath = StorageRootPath;
             var resolvedPath = Path.GetFullPath(Path.Combine(storageBasePath, storedPath.TrimStart('\\', '/')));
             AddPathVariations(resolvedPath);
 

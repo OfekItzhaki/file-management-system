@@ -46,6 +46,13 @@ public class WindsorInstaller : IWindsorInstaller
                 .Instance(container)
                 .LifestyleSingleton()
         );
+
+        // Register IConfiguration so it can be resolved by factories
+        container.Register(
+            Component.For<IConfiguration>()
+                .Instance(_configuration)
+                .LifestyleSingleton()
+        );
         
         // Register IServiceProvider - will be set from Program.cs after container is created
         // This allows resolving ASP.NET Core services (like ILogger<>) from ASP.NET Core DI
@@ -57,13 +64,19 @@ public class WindsorInstaller : IWindsorInstaller
                 .UsingFactoryMethod(() =>
                 {
                     var connectionString = _configuration.GetConnectionString("DefaultConnection")
-                        ?? "Host=localhost;Database=filemanagement;Username=postgres;Password=your_password";
+                        ?? "Data Source=filemanager.db";
                     var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
                     
-                    // Use PostgreSQL to match Program.cs
-                    // In tests, this will be overridden by the WebApplicationFactory's ConfigureServices
-                    optionsBuilder.UseNpgsql(connectionString)
-                        .EnableSensitiveDataLogging(false)
+                    if (connectionString.Contains("Host="))
+                    {
+                        optionsBuilder.UseNpgsql(connectionString);
+                    }
+                    else
+                    {
+                        optionsBuilder.UseSqlite(connectionString);
+                    }
+                    
+                    optionsBuilder.EnableSensitiveDataLogging(false)
                         .EnableServiceProviderCaching();
                     return new AppDbContext(optionsBuilder.Options);
                 })
@@ -97,10 +110,34 @@ public class WindsorInstaller : IWindsorInstaller
                 .ImplementedBy<MetadataService>()
                 .LifestyleScoped(),
             Component.For<IStorageService>()
-                .ImplementedBy<StorageService>()
-                .DependsOn(
-                    Dependency.OnValue<IConfiguration>(_configuration)
-                )
+                .UsingFactoryMethod<IStorageService>((kernel) => {
+                    try 
+                    {
+                        var isCloudinaryEnabled = _configuration.GetValue<bool>("CloudinarySettings:IsEnabled");
+                        
+                        // Debug Configuration
+                        var cloudName = _configuration["CloudinarySettings:CloudName"];
+                        var apiKey = _configuration["CloudinarySettings:ApiKey"];
+                        System.Console.WriteLine($"DEBUG: IsEnabled={isCloudinaryEnabled}, CloudName={cloudName}, ApiKey={apiKey}");
+
+                        if (isCloudinaryEnabled)
+                        {
+                            return kernel.Resolve<CloudinaryStorageService>();
+                        }
+                        return kernel.Resolve<StorageService>();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Console.WriteLine($"FATAL: Failed to resolve IStorageService: {ex}");
+                        throw;
+                    }
+                })
+                .LifestyleScoped(),
+            Component.For<StorageService>()
+                .DependsOn(Dependency.OnValue<IConfiguration>(_configuration))
+                .LifestyleScoped(),
+            Component.For<CloudinaryStorageService>()
+                .DependsOn(Dependency.OnValue<IConfiguration>(_configuration))
                 .LifestyleScoped(),
             Component.For<IFilePathResolver>()
                 .ImplementedBy<FilePathResolver>()

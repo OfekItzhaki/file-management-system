@@ -18,6 +18,19 @@ public class DatabaseInitializer
 
     public async Task InitializeAsync()
     {
+        // Ensure directory exists for SQLite
+        var connectionString = _dbContext.Database.GetConnectionString();
+        if (connectionString != null && connectionString.Contains("Data Source=") && !connectionString.Contains("Host="))
+        {
+            var path = connectionString.Split("Data Source=")[1].Trim();
+            var directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+                _logger.LogInformation("Created database directory: {Directory}", directory);
+            }
+        }
+
         if (_dbContext.Database.EnsureCreated())
         {
             _logger.LogInformation("Database created successfully");
@@ -79,8 +92,18 @@ public class DatabaseInitializer
     private async Task EnsureIsCompressedColumnAsync(DbConnection connection)
     {
         var checkCommand = connection.CreateCommand();
-        // PostgreSQL uses information_schema.columns for meta-data
-        checkCommand.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'FileItems' AND column_name = 'iscompressed'";
+        var isSqlite = _dbContext.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
+
+        if (isSqlite)
+        {
+            checkCommand.CommandText = "SELECT COUNT(*) FROM pragma_table_info('FileItems') WHERE name = 'IsCompressed'";
+        }
+        else
+        {
+            // PostgreSQL
+            checkCommand.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'FileItems' AND column_name = 'iscompressed'";
+        }
+
         var exists = Convert.ToInt32(await checkCommand.ExecuteScalarAsync()) > 0;
 
         if (!exists)
@@ -95,7 +118,18 @@ public class DatabaseInitializer
     private async Task EnsureFileNameColumnAsync(DbConnection connection)
     {
         var checkCommand = connection.CreateCommand();
-        checkCommand.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'FileItems' AND column_name = 'filename'";
+        var isSqlite = _dbContext.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite";
+
+        if (isSqlite)
+        {
+            checkCommand.CommandText = "SELECT COUNT(*) FROM pragma_table_info('FileItems') WHERE name = 'FileName'";
+        }
+        else
+        {
+            // PostgreSQL
+            checkCommand.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'FileItems' AND column_name = 'filename'";
+        }
+
         var exists = Convert.ToInt32(await checkCommand.ExecuteScalarAsync()) > 0;
 
         if (!exists)

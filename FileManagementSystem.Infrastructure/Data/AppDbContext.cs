@@ -40,6 +40,7 @@ public class AppDbContext : DbContext
             
             entity.HasIndex(e => e.HashHex);
             entity.HasIndex(e => e.Path).IsUnique();
+            entity.HasIndex(e => e.FileName);
             entity.HasIndex(e => new { e.IsPhoto, e.FolderId });
             entity.HasIndex(e => e.MimeType);
             entity.HasIndex(e => e.CreatedDate);

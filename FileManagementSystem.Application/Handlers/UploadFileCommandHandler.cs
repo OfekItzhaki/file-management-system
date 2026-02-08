@@ -83,9 +83,27 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
         // Ensure the directory exists
         Directory.CreateDirectory(targetFolder.Path);
         
-        // Always copy file to managed storage location (now compresses automatically)
-        var compressedPath = await _storageService.SaveFileAsync(normalizedSourcePath, destinationPath, cancellationToken);
-        var displayPath = destinationPath;
+        // Always copy file to managed storage location
+        var finalPath = await _storageService.SaveFileAsync(normalizedSourcePath, destinationPath, cancellationToken);
+        
+        // Determine file size and compression state
+        long actualSize;
+        bool isActuallyCompressed;
+
+        if (Uri.TryCreate(finalPath, UriKind.Absolute, out var uriResult) && 
+            (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+        {
+            // Cloud storage - use original size
+            actualSize = new FileInfo(normalizedSourcePath).Length;
+            isActuallyCompressed = false; 
+        }
+        else
+        {
+            // Local storage - use the actual stored file size
+            var storedFileInfo = new FileInfo(finalPath);
+            actualSize = storedFileInfo.Length;
+            isActuallyCompressed = finalPath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
+        }
         
         // Extract metadata for photos (need to decompress temporarily or read from original)
         // For now, we'll extract metadata from the original source file before compression
@@ -98,15 +116,14 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
         }
         
         // Create file item
-        var compressedFileInfo = new FileInfo(compressedPath);
         var fileItem = new FileItem
         {
-            Path = displayPath, // Store storage path for file location (without .gz)
+            Path = finalPath, // Store actual storage path or URL
             FileName = originalFileName, // Store original filename for display
             Hash = hash,
             HashHex = hashHex,
-            Size = compressedFileInfo.Length, // Store compressed size (actual disk usage)
-            IsCompressed = true, // Mark as compressed
+            Size = actualSize, // Store actual disk/cloud usage
+            IsCompressed = isActuallyCompressed,
             MimeType = MimeTypeHelper.GetMimeType(originalFileName), // Use original filename for MIME type
             IsPhoto = isPhoto,
             FolderId = targetFolder.Id,
@@ -114,7 +131,7 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
             PhotoDateTaken = photoMetadata?.DateTaken,
             CameraMake = photoMetadata?.CameraMake,
             CameraModel = photoMetadata?.CameraModel,
-            Latitude = photoMetadata?.Longitude,
+            Latitude = photoMetadata?.Latitude,
             Longitude = photoMetadata?.Longitude
         };
         
@@ -122,9 +139,9 @@ public class UploadFileCommandHandler : IRequestHandler<UploadFileCommand, Uploa
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         
         _logger.LogInformation("File uploaded successfully: {FilePath} (ID: {FileId})", 
-            destinationPath, fileItem.Id);
+            finalPath, fileItem.Id);
         
-        return new UploadFileResult(fileItem.Id, false, destinationPath);
+        return new UploadFileResult(fileItem.Id, false, finalPath);
     }
     
 }

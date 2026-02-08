@@ -15,6 +15,7 @@ public class MetadataService : IMetadataService
     
     public async Task<bool> IsPhotoFileAsync(string filePath, CancellationToken cancellationToken = default)
     {
+        await Task.CompletedTask;
         var extension = Path.GetExtension(filePath).ToLowerInvariant();
         return PhotoExtensions.Contains(extension);
     }

@@ -30,19 +30,31 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog with Seq
-Log.Logger = new LoggerConfiguration()
+var loggerConfiguration = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.File("logs/api.log", rollingInterval: RollingInterval.Day)
-    .WriteTo.Console()
-    .WriteTo.Seq(builder.Configuration["Serilog:SeqServerUrl"] ?? "http://localhost:5341")
-    .CreateLogger();
+    .WriteTo.Console();
+
+var seqUrl = builder.Configuration["Serilog:SeqServerUrl"];
+if (!string.IsNullOrEmpty(seqUrl))
+{
+    loggerConfiguration.WriteTo.Seq(seqUrl);
+}
+
+Log.Logger = loggerConfiguration.CreateLogger();
 
 builder.Host.UseSerilog();
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Configure upload limits
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB
+});
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -67,10 +79,25 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Health Checks
-builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!)
-    .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379")
-    .AddCheck("Storage", () => 
+var healthChecks = builder.Services.AddHealthChecks();
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (connectionString?.Contains("Host=") == true)
+{
+    healthChecks.AddNpgSql(connectionString);
+}
+else
+{
+    healthChecks.AddSqlite(connectionString ?? "Data Source=filemanager.db");
+}
+
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConnectionString) && redisConnectionString != "localhost:6379")
+{
+     healthChecks.AddRedis(redisConnectionString);
+}
+
+healthChecks.AddCheck("Storage", () => 
     {
         var path = builder.Configuration["Storage:RootPath"] ?? "data";
         return Directory.Exists(path) 
@@ -79,11 +106,19 @@ builder.Services.AddHealthChecks()
     });
 
 // Redis Cache
-builder.Services.AddStackExchangeRedisCache(options =>
+var redisConfig = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConfig) && redisConfig != "localhost:6379")
 {
-    options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
-    options.InstanceName = "HorizonFMS_";
-});
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConfig;
+        options.InstanceName = "HorizonFMS_";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
 
 // Rate Limiting
 builder.Services.AddMemoryCache();
@@ -171,15 +206,23 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(assembly);
 
 // DbContext - register directly for EF Core compatibility
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Data Source=filemanager.db";
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString)
-        .EnableSensitiveDataLogging(false)
-        .EnableServiceProviderCaching());
 
-// Memory Cache
-builder.Services.AddMemoryCache();
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    if (dbConnectionString.Contains("Host="))
+    {
+        options.UseNpgsql(dbConnectionString);
+    }
+    else
+    {
+        options.UseSqlite(dbConnectionString);
+    }
+    
+    options.EnableSensitiveDataLogging(false)
+           .EnableServiceProviderCaching();
+});
 
 // Application services
 builder.Services.AddScoped<FileManagementSystem.Application.Services.UploadDestinationResolver>();
@@ -212,6 +255,14 @@ app.Use(async (context, next) =>
     context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
     context.Response.Headers.Add("Referrer-Policy", "no-referrer");
     context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';");
+    await next();
+});
+
+// Increase file upload limit to 10MB
+app.Use(async (context, next) =>
+{
+    context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>()
+        !.MaxRequestBodySize = 10 * 1024 * 1024; // 10MB
     await next();
 });
 

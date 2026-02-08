@@ -8,11 +8,16 @@ namespace FileManagementSystem.Application.Services;
 public class UploadDestinationResolver
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFilePathResolver _filePathResolver;
     private readonly ILogger<UploadDestinationResolver> _logger;
 
-    public UploadDestinationResolver(IUnitOfWork unitOfWork, ILogger<UploadDestinationResolver> logger)
+    public UploadDestinationResolver(
+        IUnitOfWork unitOfWork, 
+        IFilePathResolver filePathResolver,
+        ILogger<UploadDestinationResolver> logger)
     {
         _unitOfWork = unitOfWork;
+        _filePathResolver = filePathResolver;
         _logger = logger;
     }
 
@@ -41,11 +46,7 @@ public class UploadDestinationResolver
 
     private async Task<Folder> GetOrCreateDefaultFolderAsync(CancellationToken cancellationToken)
     {
-        var storageBasePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "FileManagementSystem",
-            "Storage"
-        );
+        var storageBasePath = _filePathResolver.StorageRootPath;
         var defaultFolderPath = Path.Combine(storageBasePath, "Default");
 
         // Ensure the physical directory exists
