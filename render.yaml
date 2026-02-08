@@ -1,20 +1,12 @@
-services:
+databases:
   # PostgreSQL Database
-  - type: pserv
-    name: horizon-fms-db
-    env: docker
+  - name: horizon-fms-db
+    databaseName: horizon_fms
+    user: horizon_user
     plan: free
     region: oregon
-    dockerfilePath: ./Dockerfile.postgres
-    envVars:
-      - key: POSTGRES_USER
-        value: horizon_user
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-      - key: POSTGRES_DB
-        value: horizon_fms
 
-  # Redis Cache
+services:
   - type: redis
     name: horizon-fms-redis
     plan: free
