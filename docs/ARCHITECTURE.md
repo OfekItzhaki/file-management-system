@@ -218,6 +218,45 @@ Every project must implement:
 
 ---
 
+## ⚙️ Configuration Management
+
+### API URL Configuration Pattern
+
+Always split API URLs into configurable components for maximum flexibility and clarity:
+
+**Backend Configuration:**
+```bash
+API_BASE_PATH=/api          # API route prefix
+API_VERSION=v1              # Version identifier
+# Results in: /api/v1
+```
+
+**Frontend Configuration:**
+```bash
+VITE_API_BASE_URL=https://api.example.com    # Domain only (no trailing slash)
+VITE_API_BASE_PATH=/api                      # API route prefix
+VITE_API_VERSION=v1                          # Version identifier
+# Results in: https://api.example.com/api/v1
+```
+
+**Benefits:**
+- **Separation of Concerns**: Domain, routing, and versioning are independent
+- **Flexibility**: Easy to change API versions (v1 → v2) without touching URLs
+- **Clarity**: Makes configuration obvious and self-documenting
+- **Reusability**: Same base URL can serve multiple API versions or services
+
+**Implementation Example (Frontend):**
+```typescript
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5295';
+const API_BASE_PATH = import.meta.env.VITE_API_BASE_PATH || '/api';
+const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
+const API_URL = `${API_BASE_URL}${API_BASE_PATH}/${API_VERSION}`;
+```
+
+**Applies to**: Any API-driven application with versioning requirements.
+
+---
+
 ## 📚 Documentation Standards
 
 ### README.md Requirements
