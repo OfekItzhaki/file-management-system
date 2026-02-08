@@ -24,8 +24,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Environment variables
-ENV ASPNETCORE_URLS=http://+:5295
-EXPOSE 5295
+# Use PORT environment variable from Render, default to 5295 for local
+ENV ASPNETCORE_URLS=http://+:${PORT:-5295}
+EXPOSE ${PORT:-5295}
 
 ENTRYPOINT ["dotnet", "FileManagementSystem.API.dll"]
