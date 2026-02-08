@@ -66,6 +66,17 @@ This document defines the "Golden Rules" and architectural standards for all pro
 - **Goal**: Code quality, formatting, and logical correctness.
 - **Tools**: VS Code, PowerShell, GitHub Actions, **Prettier**, **ESLint**.
 - **Rule**: Never merge if formatting checks, linting, or tests fail.
+- **Pre-Commit Checklist**:
+  ```bash
+  # Frontend (TypeScript/React)
+  npm run lint          # Check for linting errors
+  npm run lint -- --fix # Auto-fix linting errors
+  npm run build         # Ensure build succeeds
+  
+  # Backend (.NET)
+  dotnet build          # Ensure build succeeds
+  dotnet test           # Run all tests
+  ```
 
 ### Southern Workflow (Docker & Deploy)
 - **Goal**: Environment parity and deployment reliability.
@@ -81,9 +92,20 @@ This document defines the "Golden Rules" and architectural standards for all pro
 - **Rule**: Never manually edit `CHANGELOG.md` files managed by automation.
 
 ### Commit & PR Strategy
-- ** Atomic Commits**: Each commit should represent a single logical change. Commits should be kept short and broken into smaller commits by features. If changes are related or dependent, they should be committed together.
+- **Atomic Commits**: Each commit should represent a single logical change. Commits should be kept short and broken into smaller commits by features. If changes are related or dependent, they should be committed together.
 - **Conventional Commits**: Use the `type(scope): description` format (feat, fix, chore, etc.).
+  - **Types**: feat, fix, chore, refactor, docs, style, test, perf, ci, build
+  - **Examples**: 
+    - `feat(ui): add dark mode support`
+    - `fix(api): resolve file upload timeout issue`
+    - `chore: update dependencies`
 - **Squash Merge**: Default for feature branches to keep history clean.
+- **Pre-Commit Requirements**:
+  1. Run linting and auto-fix: `npm run lint -- --fix` (Frontend)
+  2. Ensure builds succeed: `npm run build` or `dotnet build`
+  3. Stage changes: `git add .`
+  4. Commit with conventional format: `git commit -m "type(scope): description"`
+  5. Push to remote: `git push`
 
 ---
 
@@ -100,10 +122,28 @@ Every project must implement:
 ---
 
 ## 📜 Naming Conventions & Style
-- **Namespaces**: Use file-scoped namespaces (C#) and consistent directory structures (TS).
-- **Interfaces**: Start with `I` (C#).
-- **Async**: Methods must end in `Async` (C#).
-- **Components**: PascalCase for UI components.
+
+### TypeScript / React
+- **Components**: PascalCase (e.g., `FileList`, `Dashboard`)
+- **Files**: Match component name (e.g., `FileList.tsx`)
+- **Hooks**: Start with `use` (e.g., `useTheme`, `useAuth`)
+- **Types/Interfaces**: PascalCase (e.g., `FileItemDto`, `UserProfile`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `API_BASE_URL`, `MAX_FILE_SIZE`)
+- **Functions/Variables**: camelCase (e.g., `handleSubmit`, `isLoading`)
+
+### C# / .NET
+- **Namespaces**: Use file-scoped namespaces (C#) and consistent directory structures.
+- **Interfaces**: Start with `I` (e.g., `IStorageService`, `IRepository`).
+- **Async**: Methods must end in `Async` (e.g., `GetFileAsync`, `SaveAsync`).
+- **Classes**: PascalCase (e.g., `FileRepository`, `UserService`)
+- **Private Fields**: _camelCase with underscore prefix (e.g., `_dbContext`, `_logger`)
+- **Properties**: PascalCase (e.g., `FileName`, `CreatedDate`)
+
+### General Rules
+- **No `any` types**: Always use proper TypeScript types
+- **Descriptive names**: Use meaningful, self-documenting names
+- **Avoid abbreviations**: Unless widely understood (e.g., `id`, `url`, `api`)
+- **Consistency**: Follow existing patterns in the codebase
 
 ---
 
@@ -116,17 +156,78 @@ Projects should document project-specific ADRs separately. Global platform choic
 ---
 
 ## ✅ Gold Standard Verification
-1. **Zero-Error Frontend**: No `any` types, Vite/Build success.
-2. **Standardized Formatting**: Ruleset-compliant project-wide.
-3. **Stable Infrastructure**: Health checks green for all mesh services.
-4. **Horizon Guardian Compliance**: The codebase is audit-ready for the **Horizon Guardian** engine.
+
+### Frontend (TypeScript/React)
+1. **Zero-Error Build**: `npm run build` succeeds without errors
+2. **Zero `any` Types**: No `any` types in codebase (except auto-generated files)
+3. **Linting Passes**: `npm run lint` returns 0 errors
+4. **Formatted Code**: Code formatted with Prettier (auto-fix with `npm run lint -- --fix`)
+5. **Type Safety**: All props, state, and API responses properly typed
+
+### Backend (.NET)
+1. **Zero-Error Build**: `dotnet build` succeeds without errors
+2. **Tests Pass**: `dotnet test` all tests passing
+3. **No Warnings**: Build produces no warnings
+4. **Proper DI**: All dependencies injected via constructor
+5. **CQRS Pattern**: Commands and Queries properly separated
+
+### Infrastructure
+1. **Stable Infrastructure**: Health checks green for all mesh services
+2. **Docker Compose**: All services start successfully with `docker-compose up`
+3. **Environment Parity**: Local dev matches production architecture
+4. **Logs Structured**: All logs in JSON format with context
+
+### General
+1. **Standardized Formatting**: Ruleset-compliant project-wide
+2. **Conventional Commits**: All commits follow `type(scope): description` format
+3. **Documentation**: README and architecture docs up to date
+4. **Horizon Guardian Compliance**: The codebase is audit-ready for the **Horizon Guardian** engine
 
 ---
 
 ## 🤖 Future Agent Instructions
-1. **Read the Blueprint**: Always check this file first.
-2. **Modularize First**: If a file exceeds 200 lines, extract logic.
-3. **Audit the Chain**: Ensure changes propagate from Entity -> DTO -> Handler -> API -> Client.
+
+### Before Starting Work
+1. **Read the Blueprint**: Always check this file first
+2. **Check Steering Files**: Review `.kiro/steering/` for project-specific rules
+3. **Understand the Stack**: Identify if working on Frontend (React/TS) or Backend (.NET)
+
+### During Development
+1. **Follow Patterns**: Use existing code patterns as reference
+2. **Type Everything**: No `any` types - use proper TypeScript types
+3. **Modularize First**: If a file exceeds 200 lines, extract logic
+4. **Audit the Chain**: Ensure changes propagate from Entity → DTO → Handler → API → Client
+5. **Test Locally**: Run builds and tests before committing
+
+### Before Committing
+1. **Run Linting** (Frontend):
+   ```bash
+   cd FileManagementSystem.Web
+   npm run lint -- --fix
+   ```
+2. **Check Build** (Frontend):
+   ```bash
+   npm run build
+   ```
+3. **Check Build** (Backend):
+   ```bash
+   dotnet build
+   ```
+4. **Commit with Convention**:
+   ```bash
+   git add .
+   git commit -m "type(scope): description"
+   git push
+   ```
+
+### Code Quality Checklist
+- ✅ No `any` types
+- ✅ Proper error handling
+- ✅ Follows naming conventions
+- ✅ Uses dependency injection
+- ✅ Implements proper validation
+- ✅ Passes linting and builds
+- ✅ Committed with conventional format
 
 ---
 *Created February 2026.*
