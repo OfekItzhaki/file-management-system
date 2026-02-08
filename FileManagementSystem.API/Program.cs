@@ -82,7 +82,7 @@ builder.Services.AddSwaggerGen(c =>
 var healthChecks = builder.Services.AddHealthChecks();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (connectionString?.Contains("Host=") == true)
+if (connectionString?.Contains("Host=") == true || connectionString?.StartsWith("postgresql://") == true || connectionString?.StartsWith("postgres://") == true)
 {
     healthChecks.AddNpgSql(connectionString);
 }
@@ -211,7 +211,8 @@ var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConne
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    if (dbConnectionString.Contains("Host="))
+    // Check if it's PostgreSQL (either Host= format or postgresql:// format)
+    if (dbConnectionString.Contains("Host=") || dbConnectionString.StartsWith("postgresql://") || dbConnectionString.StartsWith("postgres://"))
     {
         options.UseNpgsql(dbConnectionString);
     }
