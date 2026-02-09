@@ -68,7 +68,9 @@ export default function TagEditor({
         <div className='flex justify-between items-center mb-6'>
           <div>
             <h3 className='text-xl font-semibold text-[var(--text-primary)]'>Manage Tags</h3>
-            <p className='text-sm text-[var(--text-tertiary)] mt-1'>Organize your file with descriptive tags</p>
+            <p className='text-sm text-[var(--text-tertiary)] mt-1'>
+              Organize your file with descriptive tags
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -84,7 +86,9 @@ export default function TagEditor({
           </label>
           <div className='flex flex-wrap gap-2 min-h-[48px] p-3 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]'>
             {tags.length === 0 ? (
-              <span className='text-[var(--text-tertiary)] text-sm italic py-1'>No tags added yet...</span>
+              <span className='text-[var(--text-tertiary)] text-sm italic py-1'>
+                No tags added yet...
+              </span>
             ) : (
               tags.map((tag) => (
                 <span

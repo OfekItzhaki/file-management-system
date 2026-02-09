@@ -76,7 +76,6 @@ const FileTableRow = memo(
       }
     };
 
-
     const handleOpenInBrowser = () => {
       setIsDropdownOpen(false);
       onOpen(file);
@@ -92,7 +91,7 @@ const FileTableRow = memo(
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-      } catch (error) {
+      } catch {
         toast.error('Failed to download file');
       }
     };
@@ -159,7 +158,9 @@ const FileTableRow = memo(
               {isDropdownOpen && (
                 <div className='absolute right-0 mt-2 w-56 bg-[var(--surface-primary)] border border-[var(--border-color)] rounded-2xl shadow-2xl z-20 py-2 animate-in fade-in zoom-in duration-200'>
                   <div className='px-4 py-2 mb-1 border-b border-[var(--border-color)]'>
-                    <p className='text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest'>File Actions</p>
+                    <p className='text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-widest'>
+                      File Actions
+                    </p>
                   </div>
                   <button
                     className='w-full px-4 py-2.5 text-left text-sm hover:bg-[var(--surface-secondary)] text-[var(--text-primary)] flex items-center justify-between group transition-colors'
