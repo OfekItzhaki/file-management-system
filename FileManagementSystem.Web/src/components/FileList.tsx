@@ -223,8 +223,8 @@ const FileList = memo(({ files, isLoading, totalCount }: FileListProps) => {
   if (isLoading) {
     return (
       <div className='loading-container flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)]'>
-        <LoadingSpinner size="lg" color="var(--accent-primary)" />
-        <span className="mt-4">Loading files...</span>
+        <LoadingSpinner size='lg' color='var(--accent-primary)' />
+        <span className='mt-4'>Loading files...</span>
       </div>
     );
   }
