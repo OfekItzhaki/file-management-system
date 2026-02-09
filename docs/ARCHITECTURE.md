@@ -11,6 +11,42 @@ This document defines **The Horizon Standard** - a universal set of architectura
 
 ---
 
+---
+
+## 🛠️ Recommended Technology Stack
+
+While "The Horizon Standard" is technology-agnostic, the following stack is recommended for new industry-level projects to ensure consistency, performance, and maintainability.
+
+### Backend (.NET / Node.js)
+- **Validation**:
+  - .NET: **FluentValidation** (Decouples validation logic from models)
+  - Node.js: **Zod** or **Valibot** (Type-safe schema validation)
+- **Logging**:
+  - .NET: **Serilog** (Structured logging sink)
+  - Node.js: **Pino** or **Winston** (JSON outputs)
+- **Architecture**:
+  - **Clean Architecture** (Domain-centric)
+  - **CQRS** with **MediatR** (.NET) or **NestJS CQRS** (Node.js) to separate read/write concerns
+- **API Documentation**:
+  - **Swagger/OpenAPI** (Auto-generated documentation)
+
+### Frontend (React / Vue)
+- **Data Fetching**:
+  - **TanStack Query (React Query)** or **SWR** (Handles caching, deduplication, and background updates)
+- **State Management**:
+  - **Zustand** (Simple global state) or **Redux Toolkit** (Complex state)
+- **Forms**:
+  - **React Hook Form** (Performance-focused) integrated with **Zod**
+- **Styling**:
+  - **Tailwind CSS** (Utility-first) or **CSS Modules** (Scoped styles)
+
+### DevOps & Infrastructure
+- **Containerization**: **Docker** + **Docker Compose**
+- **CI/CD**: **GitHub Actions** (Automated testing and deployment)
+- **Hosting**: **Render**, **Vercel**, or **AWS** (Container-based PaaS)
+
+---
+
 ## 🏗️ Architectural Pillars
 
 These principles apply to **any project** adopting The Horizon Standard:
