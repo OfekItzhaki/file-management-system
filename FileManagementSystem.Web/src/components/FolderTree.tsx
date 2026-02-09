@@ -5,15 +5,17 @@ import { folderApi } from '../services/api';
 import type { FolderDto } from '../types';
 import { FolderItem } from './FolderItem';
 import { CreateFolderInput } from './CreateFolderInput';
+import { LoadingSpinner } from './LoadingSpinner';
 import './FolderTree.css';
 
 interface FolderTreeProps {
   folders: FolderDto[];
   onFolderSelect: (folderId: string | undefined) => void;
   selectedFolderId?: string;
+  isLoading?: boolean;
 }
 
-const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTreeProps) => {
+const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId, isLoading }: FolderTreeProps) => {
   const queryClient = useQueryClient();
   const [showCreateInput, setShowCreateInput] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -136,7 +138,13 @@ const FolderTree = memo(({ folders, onFolderSelect, selectedFolderId }: FolderTr
         <span className='folder-name'>📂 All Files</span>
       </div>
 
-      {renderFolders(folders)}
+      {isLoading ? (
+        <div className="flex justify-center py-4">
+          <LoadingSpinner size="sm" color="var(--accent-primary)" />
+        </div>
+      ) : (
+        renderFolders(folders)
+      )}
     </div>
   );
 });
