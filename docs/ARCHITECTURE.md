@@ -11,6 +11,42 @@ This document defines **The Horizon Standard** - a universal set of architectura
 
 ---
 
+---
+
+## 🛠️ Recommended Technology Stack
+
+While "The Horizon Standard" is technology-agnostic, the following stack is recommended for new industry-level projects to ensure consistency, performance, and maintainability.
+
+### Backend (.NET / Node.js)
+- **Validation**:
+  - .NET: **FluentValidation** (Decouples validation logic from models)
+  - Node.js: **Zod** or **Valibot** (Type-safe schema validation)
+- **Logging**:
+  - .NET: **Serilog** (Structured logging sink)
+  - Node.js: **Pino** or **Winston** (JSON outputs)
+- **Architecture**:
+  - **Clean Architecture** (Domain-centric)
+  - **CQRS** with **MediatR** (.NET) or **NestJS CQRS** (Node.js) to separate read/write concerns
+- **API Documentation**:
+  - **Swagger/OpenAPI** (Auto-generated documentation)
+
+### Frontend (React / Vue)
+- **Data Fetching**:
+  - **TanStack Query (React Query)** or **SWR** (Handles caching, deduplication, and background updates)
+- **State Management**:
+  - **Zustand** (Simple global state) or **Redux Toolkit** (Complex state)
+- **Forms**:
+  - **React Hook Form** (Performance-focused) integrated with **Zod**
+- **Styling**:
+  - **Tailwind CSS** (Utility-first) or **CSS Modules** (Scoped styles)
+
+### DevOps & Infrastructure
+- **Containerization**: **Docker** + **Docker Compose**
+- **CI/CD**: **GitHub Actions** (Automated testing and deployment)
+- **Hosting**: **Render**, **Vercel**, or **AWS** (Container-based PaaS)
+
+---
+
 ## 🏗️ Architectural Pillars
 
 These principles apply to **any project** adopting The Horizon Standard:
@@ -73,6 +109,75 @@ function getConfig() {
 ### 5. Resilient Session Management
 - **UX Requirement**: Users should never be kicked out due to expired short-lived tokens.
 - **Pattern**: Implement a 401 Interceptor that triggers an automatic renewal (refresh token) and retries the original request seamlessly.
+
+#### JWT Authentication with Refresh Token Rotation
+
+**Token Strategy:**
+- **Access Tokens**: Short-lived (15 minutes), used for API authentication
+- **Refresh Tokens**: Long-lived (30 days), used to obtain new access tokens
+- **Storage**: 
+  - Access tokens: Client-side memory or sessionStorage (never localStorage)
+  - Refresh tokens: HTTP-only, Secure, SameSite cookies
+
+**Implementation Flow:**
+
+1. **Login** (`POST /api/v1/auth/login`):
+   ```
+   User credentials → Server validates → Returns access token + sets refresh token cookie
+   ```
+
+2. **API Requests**:
+   ```
+   Client sends access token in Authorization header → Server validates → Returns data
+   ```
+
+3. **Token Refresh** (`POST /api/v1/auth/refresh`):
+   ```
+   Access token expires → Client calls /refresh → Server validates refresh token →
+   Revokes old refresh token → Issues new access + refresh tokens
+   ```
+
+4. **Logout** (`POST /api/v1/auth/revoke`):
+   ```
+   Client calls /revoke → Server marks refresh token as revoked → Clears cookie
+   ```
+
+**Security Measures:**
+- **Token Rotation**: Each refresh invalidates the previous refresh token
+- **IP Tracking**: Log IP addresses for audit trail
+- **Revocation**: Tokens can be manually revoked (e.g., on logout, password change)
+- **Expiration**: Both token types have strict expiration times
+- **HTTP-Only Cookies**: Refresh tokens are inaccessible to JavaScript (XSS protection)
+
+**Database Schema** (RefreshToken entity):
+```csharp
+- Id: Guid
+- UserId: Guid (FK to User)
+- Token: string (unique, indexed)
+- ExpiresAt: DateTime
+- CreatedAt: DateTime
+- RevokedAt: DateTime? (null = active)
+- CreatedByIp: string
+- RevokedByIp: string?
+- ReplacedByToken: string? (for audit trail)
+```
+
+**Frontend Integration:**
+```typescript
+// Axios interceptor example
+axios.interceptors.response.use(
+  response => response,
+  async error => {
+    if (error.response?.status === 401 && !error.config._retry) {
+      error.config._retry = true;
+      await axios.post('/api/v1/auth/refresh'); // Refresh token in cookie
+      return axios(error.config); // Retry original request
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
 
 ### 6. Universal State & Caching
 - **Standard**: Always use a robust data-fetching library with built-in caching.
@@ -245,6 +350,48 @@ pytest                # Tests
   4. Stage changes: `git add .`
   5. Commit with conventional format: `git commit -m "type(scope): description"`
   6. Push to remote: `git push`
+
+#### Atomic Commits
+
+**Definition**: Each commit should represent **one complete, logical change** that can stand alone.
+
+**Principles:**
+- ✅ **Single Responsibility**: One commit = one feature, bug fix, or refactor
+- ✅ **Self-Contained**: The codebase should build and pass tests after each commit
+- ✅ **Revertible**: You can revert the commit without breaking unrelated functionality
+- ✅ **Reviewable**: Small, focused commits are easier to review and understand
+
+**Examples:**
+
+❌ **Non-Atomic** (too broad):
+```bash
+git commit -m "feat: add JWT auth, fix login bug, update docs, refactor middleware"
+```
+
+✅ **Atomic** (focused):
+```bash
+git commit -m "feat(auth): add JWT authentication with 15-min access tokens"
+git commit -m "feat(auth): implement refresh token rotation strategy"
+git commit -m "fix(auth): resolve login timeout on slow connections"
+git commit -m "docs: update ARCHITECTURE.md with auth flow"
+```
+
+**When to Split Commits:**
+- Different features or bug fixes
+- Refactoring + new functionality
+- Code changes + documentation updates
+- Backend + frontend changes (if independently deployable)
+
+**When to Keep Together:**
+- Changes that are tightly coupled (e.g., interface + implementation)
+- Renaming across multiple files
+- Database migration + corresponding code changes
+
+**Benefits:**
+- **Git Bisect**: Pinpoint which commit introduced a bug
+- **Code Review**: Easier to review small, focused changes
+- **Rollback**: Revert specific features without losing other work
+- **History**: Clear, readable project history
 
 ### Code Review Standards
 - **Review Checklist**:
