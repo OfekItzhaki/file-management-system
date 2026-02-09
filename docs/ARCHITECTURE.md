@@ -315,6 +315,48 @@ pytest                # Tests
   5. Commit with conventional format: `git commit -m "type(scope): description"`
   6. Push to remote: `git push`
 
+#### Atomic Commits
+
+**Definition**: Each commit should represent **one complete, logical change** that can stand alone.
+
+**Principles:**
+- ✅ **Single Responsibility**: One commit = one feature, bug fix, or refactor
+- ✅ **Self-Contained**: The codebase should build and pass tests after each commit
+- ✅ **Revertible**: You can revert the commit without breaking unrelated functionality
+- ✅ **Reviewable**: Small, focused commits are easier to review and understand
+
+**Examples:**
+
+❌ **Non-Atomic** (too broad):
+```bash
+git commit -m "feat: add JWT auth, fix login bug, update docs, refactor middleware"
+```
+
+✅ **Atomic** (focused):
+```bash
+git commit -m "feat(auth): add JWT authentication with 15-min access tokens"
+git commit -m "feat(auth): implement refresh token rotation strategy"
+git commit -m "fix(auth): resolve login timeout on slow connections"
+git commit -m "docs: update ARCHITECTURE.md with auth flow"
+```
+
+**When to Split Commits:**
+- Different features or bug fixes
+- Refactoring + new functionality
+- Code changes + documentation updates
+- Backend + frontend changes (if independently deployable)
+
+**When to Keep Together:**
+- Changes that are tightly coupled (e.g., interface + implementation)
+- Renaming across multiple files
+- Database migration + corresponding code changes
+
+**Benefits:**
+- **Git Bisect**: Pinpoint which commit introduced a bug
+- **Code Review**: Easier to review small, focused changes
+- **Rollback**: Revert specific features without losing other work
+- **History**: Clear, readable project history
+
 ### Code Review Standards
 - **Review Checklist**:
   - ✅ Code follows project conventions and standards
