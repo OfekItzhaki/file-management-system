@@ -218,57 +218,65 @@ const FileTableRow = memo(
   },
 );
 
-const FileCard = memo(({
-  file,
-  onDelete,
-  onOpen,
-  isDeleting
-}: {
-  file: FileItemDto;
-  onDelete: (id: string, name: string) => void;
-  onOpen: (file: FileItemDto) => void;
-  isDeleting: boolean;
-}) => {
-  const fileName = file.fileName || getFileName(file.path ?? '');
+const FileCard = memo(
+  ({
+    file,
+    onDelete,
+    onOpen,
+    isDeleting,
+  }: {
+    file: FileItemDto;
+    onDelete: (id: string, name: string) => void;
+    onOpen: (file: FileItemDto) => void;
+    isDeleting: boolean;
+  }) => {
+    const fileName = file.fileName || getFileName(file.path ?? '');
 
-  return (
-    <div className="file-card">
-      <div className="file-card-header">
-        <h3 className="file-card-title" title={fileName}>{fileName}</h3>
-        <span className="file-card-size">{formatSize(file.size ?? 0)}</span>
-      </div>
-      <div className="file-card-details">
-        <div className="file-card-info">
-          <span className="info-label">Type:</span>
-          <span className="info-value">{file.mimeType || '-'}</span>
+    return (
+      <div className='file-card'>
+        <div className='file-card-header'>
+          <h3 className='file-card-title' title={fileName}>
+            {fileName}
+          </h3>
+          <span className='file-card-size'>{formatSize(file.size ?? 0)}</span>
         </div>
-        <div className="file-card-info">
-          <span className="info-label">Date:</span>
-          <span className="info-value">
-            {file.createdDate ? new Date(file.createdDate).toLocaleDateString() : '-'}
-          </span>
-        </div>
-        {file.tags && file.tags.length > 0 && (
-          <div className="file-card-tags">
-            {file.tags.map(tag => (
-              <span key={tag} className="file-tag">{tag}</span>
-            ))}
+        <div className='file-card-details'>
+          <div className='file-card-info'>
+            <span className='info-label'>Type:</span>
+            <span className='info-value'>{file.mimeType || '-'}</span>
           </div>
-        )}
+          <div className='file-card-info'>
+            <span className='info-label'>Date:</span>
+            <span className='info-value'>
+              {file.createdDate ? new Date(file.createdDate).toLocaleDateString() : '-'}
+            </span>
+          </div>
+          {file.tags && file.tags.length > 0 && (
+            <div className='file-card-tags'>
+              {file.tags.map((tag) => (
+                <span key={tag} className='file-tag'>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className='file-card-actions'>
+          <button className='btn-open-small' onClick={() => onOpen(file)}>
+            Open
+          </button>
+          <button
+            className='btn-delete-small'
+            onClick={() => onDelete(file.id!, fileName)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? '...' : 'Delete'}
+          </button>
+        </div>
       </div>
-      <div className="file-card-actions">
-        <button className="btn-open-small" onClick={() => onOpen(file)}>Open</button>
-        <button
-          className="btn-delete-small"
-          onClick={() => onDelete(file.id!, fileName)}
-          disabled={isDeleting}
-        >
-          {isDeleting ? '...' : 'Delete'}
-        </button>
-      </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 const FileList = memo(({ files, isLoading, totalCount }: FileListProps) => {
   const queryClient = useQueryClient();
